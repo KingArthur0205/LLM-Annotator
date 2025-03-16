@@ -4,4 +4,4 @@ __all__ = [
     "annotate"
 ]
 
-from . import dtaloader
+from . import dataloader, main
