@@ -4,7 +4,7 @@ from setuptools import find_packages, setup
 
 print(f"Installing {find_packages()}")
 setup(
-    name="llm-annotator",
+    name="llm_annotator",
     version="0.0.1",
     description="An automated annotator for dialogue utterances.",
     author="Arthur Pan",
