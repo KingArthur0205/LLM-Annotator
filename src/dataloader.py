@@ -10,6 +10,7 @@ try:
     from google.colab import auth
     from google.auth import default
     IN_COLAB = True
+    drive.mount('/content/drive')
     print("Running in Google Colab.")
 except ImportError:
     IN_COLAB = False
