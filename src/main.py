@@ -4,19 +4,18 @@
 
 from argparse import ArgumentParser
 from config import ModelType
+from typing import List, Dict
 
 from dataloader import DataLoader
 
-def parse_args():
-    parser = ArgumentParser()
-    parser.add_argument("-d","--data_file", type=str, default="../data/alltranscripts_423_clean_segmented.csv", help="Path of the transcript dataset(csv).")
+def annotate(
+        feature_list:List[str],
+        transcript_path:str,
+        sheet_source:str
+):
 
-    return parser.parse_args()
-
-def main():
-    args = parse_args()
-    dataloader = DataLoader(sheet_source="../data/MOL Roles Features.xlsx",
-                            transcript_path=args.data_file)
-
-if __name__ == "__main__":
-    main()
+    dataloader = DataLoader(sheet_source=sheet_source,
+                            transcript_path=transcript_path)
+    sheets_data = dataloader.get_features()
+    transcript_df = dataloader.get_transcript()
+    features = dataloader.generate_features(feature_list)
