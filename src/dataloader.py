@@ -40,7 +40,24 @@ class DataLoader:
     def __load_features(self, source:str):
         # Check if the source is a local file
         if os.path.exists(source):
-            feature_sheet = pd.read_csv(source)
+            feature_sheet = pd.ExcelFile(source)
+            sheet_names = feature_sheet.sheet_names
+            print("Available Sheets:", sheet_names)
+            
+            # Extract data from each sheet
+            self.sheets_data = {}
+            for sheet_name in sheet_names:
+                try:
+                    df = pd.read_excel(source, sheet_name=sheet_name)
+                    
+                    # Fill in the missing Code Type
+                    if "Code Type" in df.columns:
+                        df["Code Type"] = df["Code Type"].replace("", None).ffill()
+                    
+                    self.sheets_data[sheet_name] = df
+                except Exception as e:
+                    raise ValueError(f"Error reading sheet '{sheet_name}': {e}")
+
         # Check if the source is a Google Sheet ID
         else: 
             try:
@@ -48,23 +65,23 @@ class DataLoader:
             except:
                 raise ValueError("The provided source is neither a valid local file nor a valid Google Sheet ID.")
 
-        sheet_names = [sheet.title for sheet in feature_sheet.worksheets()]
-        print("Available Sheets:", sheet_names)
+            sheet_names = [sheet.title for sheet in feature_sheet.worksheets()]
+            print("Available Sheets:", sheet_names)
 
-        # Extract the individual features from seperate sheets.
-        self.sheets_data = {}
-        for sheet_name in sheet_names:
-            try:
-                worksheet = feature_sheet.worksheet(sheet_name)
-                data = worksheet.get_all_values()
-            except:
-                raise ValueError(f"The sheet '{sheet_name}' is not found.")
-            df = pd.DataFrame(data[1:], columns=data[0])
+            # Extract the individual features from seperate sheets.
+            self.sheets_data = {}
+            for sheet_name in sheet_names:
+                try:
+                    worksheet = feature_sheet.worksheet(sheet_name)
+                    data = worksheet.get_all_values()
+                except:
+                    raise ValueError(f"The sheet '{sheet_name}' is not found.")
+                df = pd.DataFrame(data[1:], columns=data[0])
 
-            # Fill in the missing Code Type
-            if "Code Type" in df.columns:
-                df["Code Type"] = df["Code Type"].replace("", None).ffill()
-            self.sheets_data[sheet_name] = df
+                # Fill in the missing Code Type
+                if "Code Type" in df.columns:
+                    df["Code Type"] = df["Code Type"].replace("", None).ffill()
+                self.sheets_data[sheet_name] = df
 
         return self.sheets_data
 

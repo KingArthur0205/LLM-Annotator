@@ -15,7 +15,7 @@ def parse_args():
 
 def main():
     args = parse_args()
-    dataloader = DataLoader(sheet_source="1miMC8M_UkfY_3XhglTAdt9sC9H8D6d9slzC7_LgcLOc",
+    dataloader = DataLoader(sheet_source="../data/MOL Roles Features.xlsx",
                             transcript_path=args.data_file)
 
 if __name__ == "__main__":
