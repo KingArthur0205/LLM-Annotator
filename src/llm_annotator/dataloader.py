@@ -15,11 +15,12 @@ except ImportError:
     IN_COLAB = False
     print("Running in Local Enviornment.")
 
+
 class DataLoader:
     def __init__(self,
-                 sheet_source:str,
-                 transcript_path:str,
-                 save_dir:str="../results"):
+                 sheet_source : str,
+                 transcript_path : str,
+                 save_dir : str="../results"):
         if IN_COLAB:
             auth.authenticate_user()
             creds, _ = default()
@@ -29,7 +30,6 @@ class DataLoader:
         self.transcript_df = self.__load_transcript(transcript_path)
         self.sheets_data = self.__load_features(sheet_source)
         self.features = {}
-        print("Hi")
 
     def __load_transcript(self, transcript_path:str):
         try:

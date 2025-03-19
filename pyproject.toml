@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "llm_annotator"
+version = "0.0.1"
+description = "An automated annotator for dialogue utterances."
+authors = [
+    { name = "Arthur Pan", email = "s2249818@ed.ac.uk" }
+]
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = ["numpy", "pandas", "gspread", "openpyxl"]
+
+[tool.setuptools]
+packages = { find = { where = ["src"] } }  # Equivalent to find_packages(where="src")
+
+[tool.setuptools.package-dir]
+"" = "src"  # Tells setuptools that packages are inside 'src/'
