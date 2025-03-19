@@ -2,14 +2,12 @@
 # Date: 2025/03/16
 # Version: 0.1
 import os
-import llm_annotator.config as config
-import llm_annotator.dataloader as dataloader
 
 from argparse import ArgumentParser
-from config import ModelType
 from typing import List, Dict
 
-from dataloader import DataLoader
+from llm_annotator.config import ModelType
+from llm_annotator.dataloader import DataLoader
 
 def annotate(
         feature_list:List[str],
