@@ -9,5 +9,6 @@ setup(
     description="An automated annotator for dialogue utterances.",
     author="Arthur Pan",
     author_email="s2249818@ed.ac.uk",
+    package_dir={"": "src"},
     packages=find_packages(),
 )
