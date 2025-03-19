@@ -10,7 +10,6 @@ try:
     from google.colab import auth
     from google.auth import default
     IN_COLAB = True
-    drive.mount('/content/drive')
     print("Running in Google Colab.")
 except ImportError:
     IN_COLAB = False
@@ -25,10 +24,12 @@ class DataLoader:
             auth.authenticate_user()
             creds, _ = default()
             self.gc = gspread.authorize(creds)
+            drive.mount('/content/drive')
         self.save_dir = save_dir
         self.transcript_df = self.__load_transcript(transcript_path)
         self.sheets_data = self.__load_features(sheet_source)
         self.features = {}
+        print("Hi")
 
     def __load_transcript(self, transcript_path:str):
         try:

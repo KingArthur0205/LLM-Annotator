@@ -10,5 +10,5 @@ setup(
     author="Arthur Pan",
     author_email="s2249818@ed.ac.uk",
     package_dir={"": "src"},
-    packages=find_packages(),
+    packages=find_packages(where="src"),
 )
