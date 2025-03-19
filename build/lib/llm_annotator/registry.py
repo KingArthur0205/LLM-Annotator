@@ -2,8 +2,7 @@ import functools
 import inspect
 import catalogue
 
-components = catalogue.create("llm_annotator", "components")
-
+components = catalogue.create("magnify", "components")
 
 def component(name):
     def component_decorator(func):

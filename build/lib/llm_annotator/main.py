@@ -7,7 +7,7 @@ from argparse import ArgumentParser
 from typing import List, Dict
 from openai import OpenAI
 
-from llm_annotator.pipeline import Pipeline
+from llm_annotator.config import ModelType
 from llm_annotator.dataloader import DataLoader
 
 
@@ -19,10 +19,9 @@ def annotate(
     dataloader = DataLoader(sheet_source=sheet_source,
                             transcript_path=transcript_path)
 
-    feature_df = dataloader.get_features()
+    sheets_data = dataloader.get_features()
     transcript_df = dataloader.get_transcript()
     features = dataloader.generate_features(feature_list)
-
 
 
 def set_working_dir():
