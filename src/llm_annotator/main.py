@@ -11,7 +11,8 @@ import llm_annotator.prompt_parser
 from llm_annotator.pipeline import Pipeline
 from llm_annotator.dataloader import DataLoader
 from llm_annotator.registry import simple_llm_pipe
-from llm_annotator import utils
+from llm_annotator import utils, preprocess
+from llm_annotator.llm import openai_annotate
 
 
 def annotate(
@@ -27,7 +28,12 @@ def annotate(
     transcript_df = dataloader.get_transcript()
     feature_dict = dataloader.generate_features(feature_list)
 
-    pipe = simple_llm_pipe(['gpt-4o'], feature_dict=feature_dict, feature=feature_list[0])
+    pipe = simple_llm_pipe(model_list=['gpt-4o'],
+                           obs_list=["146"],
+                           feature_dict=feature_dict,
+                           feature=feature_list[0],
+                           transcript_df=transcript_df,
+                           feature_df=feature_df)
     return pipe()
 
 
