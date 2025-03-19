@@ -7,8 +7,11 @@ from argparse import ArgumentParser
 from typing import List, Dict
 from openai import OpenAI
 
+import llm_annotator.prompt_parser
 from llm_annotator.pipeline import Pipeline
 from llm_annotator.dataloader import DataLoader
+from llm_annotator.registry import simple_llm_pipe
+from llm_annotator import utils
 
 
 def annotate(
@@ -19,9 +22,13 @@ def annotate(
     dataloader = DataLoader(sheet_source=sheet_source,
                             transcript_path=transcript_path)
 
+    # Read in the feature file and transcript file
     feature_df = dataloader.get_features()
     transcript_df = dataloader.get_transcript()
-    features = dataloader.generate_features(feature_list)
+    feature_dict = dataloader.generate_features(feature_list)
+
+    pipe = simple_llm_pipe(['gpt-4o'], feature_dict=feature_dict, feature=feature_list[0])
+    return pipe()
 
 
 def set_working_dir():
@@ -36,8 +43,6 @@ def main():
     annotate(feature_list=["Mathcompetent"],
              transcript_path="./data/alltranscripts_423_clean_segmented.csv",
              sheet_source="./data/MOL Roles Features.xlsx")
-    pipe = Pipeline()
-    pipe()
 
 
 if __name__ == "__main__":

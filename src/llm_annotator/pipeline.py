@@ -1,6 +1,8 @@
+import confection
+import inspect
+
 from llm_annotator.config import ModelType, ModelConfig
-from llm_annotator.registry import components
-from llm_annotator.utils import valid_kwargs
+from llm_annotator.utils import valid_kwargs, components
 
 from typing import Callable
 
@@ -18,23 +20,28 @@ model_configs = {
 
 
 class Pipeline:
-    def __init__(self):
+    def __init__(self, config: dict[str, dict[str, str]]):
         self.components: list[Callable] = []
+        self.config = confection.Config(config)
 
     def __call__(self, *args, **kwargs):
-        inputs = None
         outputs = []
         for name, component in self.components:
-            output = component(inputs)
-            inputs = output
-        outputs.append(output)
+            component_params = inspect.signature(component).parameters
+            component_kwargs = {param: self.config[param] for param in component_params if param in self.config}
+
+            # Compute the outputs
+            output = component(**component_kwargs)
+            outputs.append(output)
 
         if len(outputs) == 1:
             outputs = outputs[0]
         return outputs
 
-    def add_pipe(self, name: str):
+    def add_pipe(self, name: str, idx: int):
         component_factory = components.get(name)
         component = component_factory(**valid_kwargs(self.config, component_factory))
+
         new_element = (name, component)
-        self.components.insert(new_element)
+        self.components.insert(idx, new_element)
+

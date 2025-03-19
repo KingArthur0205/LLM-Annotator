@@ -18,9 +18,9 @@ except ImportError:
 
 class DataLoader:
     def __init__(self,
-                 sheet_source : str,
-                 transcript_path : str,
-                 save_dir : str="../results"):
+                 sheet_source: str,
+                 transcript_path: str,
+                 save_dir: str = "../results"):
         if IN_COLAB:
             auth.authenticate_user()
             creds, _ = default()
@@ -37,8 +37,7 @@ class DataLoader:
         except:
             raise FileNotFoundError("Transcript file not found")
 
-
-    def __load_features(self, source:str):
+    def __load_features(self, source: str):
         # Check if the source is a local file
         if os.path.exists(source):
             feature_sheet = pd.ExcelFile(source)
@@ -92,7 +91,9 @@ class DataLoader:
     def get_transcript(self):
         return self.transcript_df
 
-    def generate_features(self, feature_list: List[str] = []):
+    # TO-DO: Change the examples to be dynamic
+    def generate_features(self, feature_list: List[str] = [])\
+            -> Dict:
         if self.sheets_data is None:
             self.__load_feautres()
 
