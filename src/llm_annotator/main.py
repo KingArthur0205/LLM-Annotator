@@ -24,7 +24,6 @@ def annotate(
     features = dataloader.generate_features(feature_list)
 
 
-
 def set_working_dir():
     current_dir = os.path.dirname(os.path.abspath(__file__))
     repo_root = os.path.abspath(os.path.join(current_dir, "../.."))
@@ -37,6 +36,8 @@ def main():
     annotate(feature_list=["Mathcompetent"],
              transcript_path="./data/alltranscripts_423_clean_segmented.csv",
              sheet_source="./data/MOL Roles Features.xlsx")
+    pipe = Pipeline()
+    pipe()
 
 
 if __name__ == "__main__":

@@ -8,7 +8,6 @@ from typing import Callable
 model_configs = {
         "gpt-4o": ModelConfig(ModelType.GPT4O),
         "gpt-o1": ModelConfig(ModelType.O1),
-        "gpt-o3-mini": ModelConfig(ModelType.O3_MINI),
         "claude-3-5": ModelConfig(ModelType.CLAUDE),
         "gemini-1.5-pro": ModelConfig(ModelType.GEMINI),
         "mistral": ModelConfig(ModelType.MISTRAL),
@@ -27,6 +26,7 @@ class Pipeline:
         outputs = []
         for name, component in self.components:
             output = component(inputs)
+            inputs = output
         outputs.append(output)
 
         if len(outputs) == 1:

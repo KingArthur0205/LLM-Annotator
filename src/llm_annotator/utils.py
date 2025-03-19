@@ -1,4 +1,5 @@
 import inspect
+import llm_annotator.registry as registry
 
 from typing import Any, Callable
 

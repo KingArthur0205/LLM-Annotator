@@ -6,4 +6,5 @@ __all__ = [
 
 from .main import annotate
 from . import dataloader
+from . import utils
 

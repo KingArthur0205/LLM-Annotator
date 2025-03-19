@@ -2,6 +2,10 @@ import functools
 import inspect
 import catalogue
 
+from typing import List
+
+from llm_annotator.pipeline import Pipeline
+
 components = catalogue.create("llm_annotator", "components")
 
 
@@ -19,3 +23,8 @@ def component(name):
         return func
 
     return component_decorator
+
+
+def simple_llm_pipe(model_list: List[str]):
+    pipe = Pipeline()
+    pipe.add_pipe("build_prompt")

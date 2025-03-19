@@ -1,4 +1,10 @@
-def create_exmaples(features: Dict, feature: str) -> str:
+import llm_annotator.registry as registry
+
+from typing import Dict
+
+
+@registry.components.register("build_examples")
+def build_examples(features: Dict, feature: str) -> str:
     template = ""
     """Create the example prompt template."""
     for i in range(1, 4):
@@ -12,3 +18,4 @@ def create_exmaples(features: Dict, feature: str) -> str:
         if not (student_text is None) and student_text != "":
             template += f"Student text: {student_text}\n{feature}: 0\n"
     return template
+
