@@ -20,6 +20,8 @@ from llm_annotator.llm import openai_annotate, anthropic_annotate, batch_anthrop
 
 
 def annotate(
+        model_list: List[str],
+        obs_list: List[str],
         feature_list: List[str],
         transcript_path: str,
         sheet_source: str
@@ -32,8 +34,8 @@ def annotate(
     transcript_df = dataloader.get_transcript()
     feature_dict = dataloader.generate_features(feature_list)
 
-    pipe = simple_llm_pipe(model_list=['gpt-4o'],
-                           obs_list=["146"],
+    pipe = simple_llm_pipe(model_list=model_list,
+                           obs_list=obs_list,
                            feature_dict=feature_dict,
                            feature=feature_list[0],
                            transcript_df=transcript_df,
@@ -50,10 +52,11 @@ def set_working_dir():
 
 def main():
     set_working_dir()
-    annotate(feature_list=["Mathcompetent"],
+    annotate(model_list=["gpt-4o"],
+             obs_list=["146"],
+             feature_list=["Mathcompetent"],
              transcript_path="./data/alltranscripts_423_clean_segmented.csv",
              sheet_source="./data/MOL Roles Features.xlsx")
-
 
 
 if __name__ == "__main__":
