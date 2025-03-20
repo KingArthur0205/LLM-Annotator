@@ -9,6 +9,7 @@ from openai import OpenAI
 
 import llm_annotator.prompt_parser
 import llm_annotator.annotator
+import llm_annotator.postprocess
 from llm_annotator.pipeline import Pipeline
 from anthropic.types.messages.batch_create_params import Request
 from anthropic.types.message_create_params import MessageCreateParamsNonStreaming
@@ -58,7 +59,7 @@ def main():
                        transcript_path="./data/alltranscripts_423_clean_segmented.csv",
                        sheet_source="./data/MOL Roles Features.xlsx")
     a = outputs["batch_results"]
-    print(a['gpt-4o'].read())
+    print(a['gpt-4o'])
 
 
 if __name__ == "__main__":

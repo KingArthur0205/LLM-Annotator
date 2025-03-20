@@ -143,6 +143,10 @@ def process_requests(model_requests: Dict) -> Dict:
 def fetch_batch(batches: Dict):
     results = {}
     print("Fetching results...")
+
+    for model, batch in batches.items():
+        print(f"{model}: batch")
+
     while True:
         all_done = True
 
@@ -155,7 +159,7 @@ def fetch_batch(batches: Dict):
 
                 # Retrieve completed results
                 if status == "completed":
-                    result = client.files.content(response.output_file_id)
+                    result = client.files.content(response.output_file_id).read().decode("utf-8")
                     print(f"Results for {model} is completed")
                     results[model] = result
 
