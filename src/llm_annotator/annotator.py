@@ -3,7 +3,12 @@ import pandas as pd
 from typing import Dict, List
 from tqdm import tqdm
 
+import anthropic
+from anthropic.types.message_create_params import MessageCreateParamsNonStreaming
+from anthropic.types.messages.batch_create_params import Request
+
 from llm_annotator import utils
+from llm_annotator.llm import Annotation, batch_anthropic_annotate, batch_openai_annotate
 
 
 def mark_ineligible_rows(model_list: List[str],
@@ -27,17 +32,61 @@ def mark_ineligible_rows(model_list: List[str],
     return eligible_rows, atn_feature_dfs
 
 
+def group_obs(transcript_df: pd.DataFrame,
+              if_context: bool,
+              obs_list: List[str]):
+    obs_groups = {}
+    if if_context:
+        for obs_id in obs_list:
+            obs_groups[obs_id] = transcript_df[transcript_df['obsid'] == obs_id].index.tolist()
+    return obs_groups
+
+
+def create_request(model: str, prompt: str, idx: int):
+    match model:
+        case "claude-3-7":
+            return Request(
+                custom_id=f"request_{idx}",
+                params=MessageCreateParamsNonStreaming(
+                    model="claude-3-7-sonnet-20250219",
+                    max_tokens=1000,
+                    messages=[{"role": "system",
+                               "content": "You are an expert at structured data annotation. You will be given "
+                                          "unstructured student dialogue from math class discussions and should "
+                                          "annotate the utterance provide results in JSON format."},
+                              {"role": "user",
+                               "content": prompt,
+                               }],
+                    response_model=Annotation
+                )
+            )
+        case "gpt-4o":
+            return {"custom_id": f"request_{idx}",
+                    "method": "POST",
+                    "url": "/v1/chat/completions",
+                    "body": {"model": "gpt-4-o",
+                             "messages": [{"role": "system",
+                                           "content": "You are an expert at structured data annotation. You will be given "
+                                           "unstructured student dialogue from math class discussions and should "
+                                           "annotate the utterance and provide results in JSON format."},
+                                          {"role": "user",
+                                           "content": prompt}],
+                             "max_tokens": 1000,
+                             "response_model": Annotation}
+                    }
+
+
 @utils.component("process_observations")
 def process_observations(transcript_df: pd.DataFrame,
                          model_list: List[str],
                          feature_dict: Dict,
+                         prompt_template: str,
                          obs_list: List[str] = None,
                          if_context: bool = False,
                          fwd_window: int = 0,
                          bwd_window: int = 0,
                          min_len: int = 6,
                          **kwargs) -> Dict[str, pd.DataFrame]:
-
     atn_df = transcript_df
     # Create a dictionary to store results per feature
     eligible_rows, atn_feature_dfs = mark_ineligible_rows(model_list=model_list,
@@ -45,17 +94,14 @@ def process_observations(transcript_df: pd.DataFrame,
                                                           transcript_df=transcript_df,
                                                           min_len=min_len)
 
-    # Prepare schemas and parser once (moved outside loop)
-    # To-be implemented
-
     # Group data by observation ID for faster context window construction
-    obs_groups = {}
-    if if_context:
-        for obs_id in obs_list:
-            obs_groups[obs_id] = atn_df[atn_df['obsid'] == obs_id].index.tolist()
+    obs_groups = group_obs(if_context=if_context, obs_list=obs_list, transcript_df=transcript_df)
 
     # Process eligible rows
     annotated_set = set()
+    model_reqs = {}
+    for model in model_list:
+        model_reqs[model] = []
 
     for idx, row in tqdm(eligible_rows.iterrows(), desc="Processing annotations", total=len(eligible_rows)):
         if row['obsid'] not in annotated_set:
@@ -63,54 +109,28 @@ def process_observations(transcript_df: pd.DataFrame,
             annotated_set.add(row['obsid'])
 
         # Build context window if requested
-        window = ""
-        if if_context:
-            window = self._build_context_window(row, atn_df, obs_groups, fwd_window, bwd_window)
+        # window = ""
+        # if if_context:
+        #    window = self._build_context_window(row, atn_df, obs_groups, fwd_window, bwd_window)
 
+        prompt = prompt_template.format(dialogue=row['dialogue'])
         # Get annotations from each model
-        for model_name, chain in self.chains.items():
-            try:
-                annotation_results = self._annotate_utterance(
-                    chain, row['dialogue'], annotation_format, window
-                )
+        for model in model_list:
+            # Create the model
+            request = create_request(model=model, prompt=prompt, idx=idx)
+            model_reqs[model].append(request)
 
-                # Update all features at once for this row and model
-                for feature_name in self.features:
-                    feature_dfs[feature_name].at[idx, model_name] = annotation_results[feature_name]
-            except KeyboardInterrupt:
-                self._save_results(feature_dfs=feature_dfs,
-                                  models=list(self.chains.keys()),
-                                  obs_list=obs_list,
-                                  if_context=if_context,
-                                  fwd_window=fwd_window,
-                                  bwd_window=bwd_window,
-                                  **kwargs)
-                return feature_dfs
-            except Exception as e:
-                # Re-raise KeyboardInterrupt to be caught by outer handler
-                self._save_results(feature_dfs=feature_dfs,
-                                  models=list(self.chains.keys()),
-                                  obs_list=obs_list,
-                                  if_context=if_context,
-                                  fwd_window=fwd_window,
-                                  bwd_window=bwd_window,
-                                  **kwargs)
-                return feature_dfs
-        if idx % 10 ==0:
-            self._save_results(feature_dfs=feature_dfs,
-                                  models=list(self.chains.keys()),
-                                  obs_list=obs_list,
-                                  if_context=if_context,
-                                  fwd_window=fwd_window,
-                                  bwd_window=bwd_window,
-                                  **kwargs)
+    return "model_requests", model_reqs
 
-    # Save results
-    self._save_results(feature_dfs=feature_dfs,
-                      models=list(self.chains.keys()),
-                      obs_list=obs_list,
-                      if_context=if_context,
-                      fwd_window=fwd_window,
-                      bwd_window=bwd_window,
-                      **kwargs)
-    return feature_dfs
+
+@utils.component("process_requests")
+def process_requests(model_requests: Dict[List]):
+    batches = {}
+    for model, req_list in model_requests.items():
+        if model == "gpt-4o":
+            batch = batch_openai_annotate(requests=req_list)
+
+        elif model == "claude-3-7":
+            batch = batch_anthropic_annotate(requests=req_list)
+        batches[model] = batch
+    return batches

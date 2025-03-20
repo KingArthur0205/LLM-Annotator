@@ -10,8 +10,9 @@ authors = [
     { name = "Arthur Pan", email = "s2249818@ed.ac.uk" }
 ]
 readme = "README.md"
-requires-python = ">=3.9"
-dependencies = ["numpy", "pandas", "gspread", "openpyxl", "openai", "anthropic", "catalogue", "confection"]
+requires-python = ">=3.10"
+dependencies = ["numpy", "pandas", "gspread", "openpyxl", "openai", "anthropic", "catalogue", "confection", "tqdm",
+    "instructor", "eval_type_backport"]
 
 [tool.setuptools]
 packages = { find = { where = ["src"] } }  # Equivalent to find_packages(where="src")

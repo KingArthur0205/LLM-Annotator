@@ -7,18 +7,6 @@ from llm_annotator.utils import valid_kwargs, components
 from typing import Callable
 
 
-model_configs = {
-        "gpt-4o": ModelConfig(ModelType.GPT4O),
-        "gpt-o1": ModelConfig(ModelType.O1),
-        "claude-3-5": ModelConfig(ModelType.CLAUDE),
-        "gemini-1.5-pro": ModelConfig(ModelType.GEMINI),
-        "mistral": ModelConfig(ModelType.MISTRAL),
-        "deepseek-v3": ModelConfig(ModelType.DEEPSEEK),
-        "llama-3.2-3b": ModelConfig(ModelType.LLAMA3B),
-        "llama-3.3-70b": ModelConfig(ModelType.LLAMA70B)
-}
-
-
 class Pipeline:
     def __init__(self, config: dict[str, dict[str, str]]):
         self.components: list[Callable] = []
@@ -32,8 +20,8 @@ class Pipeline:
 
             # Compute the outputs
             output_name, output = component(**component_kwargs)
-            outputs.append(output)
-
+            #outputs.append(output)
+            print(output)
             self.config[output_name] = output
 
         if len(outputs) == 1:

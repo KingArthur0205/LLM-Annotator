@@ -8,11 +8,15 @@ from typing import List, Dict
 from openai import OpenAI
 
 import llm_annotator.prompt_parser
+import llm_annotator.annotator
 from llm_annotator.pipeline import Pipeline
+from anthropic.types.messages.batch_create_params import Request
+from anthropic.types.message_create_params import MessageCreateParamsNonStreaming
+
 from llm_annotator.dataloader import DataLoader
 from llm_annotator.registry import simple_llm_pipe
 from llm_annotator import utils, preprocess
-from llm_annotator.llm import openai_annotate
+from llm_annotator.llm import openai_annotate, anthropic_annotate, batch_anthropic_annotate
 
 
 def annotate(
@@ -49,6 +53,7 @@ def main():
     annotate(feature_list=["Mathcompetent"],
              transcript_path="./data/alltranscripts_423_clean_segmented.csv",
              sheet_source="./data/MOL Roles Features.xlsx")
+
 
 
 if __name__ == "__main__":
