@@ -52,11 +52,13 @@ def set_working_dir():
 
 def main():
     set_working_dir()
-    annotate(model_list=["gpt-4o"],
-             obs_list=["146"],
-             feature_list=["Mathcompetent"],
-             transcript_path="./data/alltranscripts_423_clean_segmented.csv",
-             sheet_source="./data/MOL Roles Features.xlsx")
+    outputs = annotate(model_list=["gpt-4o"],
+                       obs_list=["146"],
+                       feature_list=["Mathcompetent"],
+                       transcript_path="./data/alltranscripts_423_clean_segmented.csv",
+                       sheet_source="./data/MOL Roles Features.xlsx")
+    a = outputs["batch_results"]
+    print(a['gpt-4o'].read())
 
 
 if __name__ == "__main__":

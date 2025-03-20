@@ -5,12 +5,15 @@ import json
 import openai
 import anthropic
 
+from dotenv import load_dotenv, find_dotenv
 from typing import List, Dict
 from pydantic import BaseModel
 from openai import OpenAI
 from anthropic import Anthropic
 from anthropic.types.message_create_params import MessageCreateParamsNonStreaming
 from anthropic.types.messages.batch_create_params import Request
+
+_ = load_dotenv(find_dotenv())
 
 
 class Annotation(BaseModel):
@@ -27,7 +30,7 @@ def openai_annotate(prompt: str):
              "content": "You are an expert at structured data annotation. You will be given unstructured student dialogue from math class discussions and should annotate the utternace with appropriate values."},
             {"role": "user", "content": f"{prompt}"}
         ],
-        response_format=Annotation,
+        response_format=Annotation.model_json_schema(),
     )
 
     annotations = completion.choices[0].message.parsed
@@ -44,25 +47,30 @@ def anthropic_annotate(prompt: str):
             {"role": "user", "content": f"{prompt}"}
         ],
         max_tokens=300,
-        response_model=Annotation,
+        response_model=Annotation.model_json_schema(),
     )
 
     return completion
 
 
 def batch_openai_annotate(requests: List[Dict]):
-    with open("temp/batch_input.jsonl", "w") as f:
+    os.makedirs("temp", exist_ok=True)  # Ensure the directory exists
+    file_path = "temp/batch_input.jsonl"
+
+    with open(file_path, "w") as f:
         for item in requests:
             json.dump(item, f)  # Convert dict to JSON string
             f.write("\n")
+
     client = OpenAI()
 
     batch_input_file = client.files.create(
-        file=open("temp/batch_input.jsonl", "rb"),
+        file=open(file_path, "rb"),
         purpose="batch"
     )
 
     batch_input_file_id = batch_input_file.id
+
     return client.batches.create(
         input_file_id=batch_input_file_id,
         endpoint="/v1/chat/completions",

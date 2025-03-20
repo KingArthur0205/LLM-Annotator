@@ -12,7 +12,7 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = ["numpy", "pandas", "gspread", "openpyxl", "openai", "anthropic", "catalogue", "confection", "tqdm",
-    "instructor", "eval_type_backport"]
+    "instructor", "eval_type_backport", "dotenv"]
 
 [tool.setuptools]
 packages = { find = { where = ["src"] } }  # Equivalent to find_packages(where="src")

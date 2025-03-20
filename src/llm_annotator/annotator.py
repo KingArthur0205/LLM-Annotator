@@ -1,9 +1,11 @@
 import pandas as pd
+import time
 
 from typing import Dict, List
 from tqdm import tqdm
 
 import anthropic
+import openai
 from anthropic.types.message_create_params import MessageCreateParamsNonStreaming
 from anthropic.types.messages.batch_create_params import Request
 
@@ -57,14 +59,14 @@ def create_request(model: str, prompt: str, idx: int):
                               {"role": "user",
                                "content": prompt,
                                }],
-                    response_model=Annotation
+                    response_model=Annotation.model_json_schema()
                 )
             )
         case "gpt-4o":
             return {"custom_id": f"request_{idx}",
                     "method": "POST",
                     "url": "/v1/chat/completions",
-                    "body": {"model": "gpt-4-o",
+                    "body": {"model": "gpt-4o",
                              "messages": [{"role": "system",
                                            "content": "You are an expert at structured data annotation. You will be given "
                                            "unstructured student dialogue from math class discussions and should "
@@ -72,7 +74,10 @@ def create_request(model: str, prompt: str, idx: int):
                                           {"role": "user",
                                            "content": prompt}],
                              "max_tokens": 1000,
-                             "response_model": Annotation}
+                             "temperature": 0,
+                             "response_format": {
+                                    "type": "json_object"
+                             }}
                     }
 
 
@@ -87,7 +92,7 @@ def process_observations(transcript_df: pd.DataFrame,
                          bwd_window: int = 0,
                          min_len: int = 6,
                          **kwargs) -> Dict[str, pd.DataFrame]:
-    atn_df = transcript_df
+
     # Create a dictionary to store results per feature
     eligible_rows, atn_feature_dfs = mark_ineligible_rows(model_list=model_list,
                                                           feature_dict=feature_dict,
@@ -103,11 +108,7 @@ def process_observations(transcript_df: pd.DataFrame,
     for model in model_list:
         model_reqs[model] = []
 
-    for idx, row in tqdm(eligible_rows.iterrows(), desc="Processing annotations", total=len(eligible_rows)):
-        if row['obsid'] not in annotated_set:
-            print(f"Annotating obs {row['obsid']}.")
-            annotated_set.add(row['obsid'])
-
+    for idx, row in eligible_rows.iterrows():
         # Build context window if requested
         # window = ""
         # if if_context:
@@ -124,13 +125,56 @@ def process_observations(transcript_df: pd.DataFrame,
 
 
 @utils.component("process_requests")
-def process_requests(model_requests: Dict[List]):
+def process_requests(model_requests: Dict) -> Dict:
     batches = {}
     for model, req_list in model_requests.items():
+        req_list = req_list[:2]
+
         if model == "gpt-4o":
             batch = batch_openai_annotate(requests=req_list)
 
         elif model == "claude-3-7":
             batch = batch_anthropic_annotate(requests=req_list)
         batches[model] = batch
-    return batches
+    return "batches", batches
+
+
+@utils.component("fetch_batch")
+def fetch_batch(batches: Dict):
+    results = {}
+    print("Fetching results...")
+    while True:
+        all_done = True
+
+        for model, batch in batches.items():
+            batch_id = batch.id
+            if model == "gpt-4o":
+                client = openai.OpenAI()
+                response = client.batches.retrieve(batch_id)
+                status = response.status
+
+                # Retrieve completed results
+                if status == "completed":
+                    result = client.files.content(response.output_file_id)
+                    print(f"Results for {model} is completed")
+                    results[model] = result
+
+            elif model == "claude-3-7":
+                client = anthropic.Anthropic()
+                response = client.get_batch(batch_id)
+                status = response.get("status")
+
+                if status == "completed":
+                    result = client.get_batch_results(batch_id)
+                    print(f"Results for {model} is completed")
+                    results[model] = result
+
+            if status not in ["completed", "failed", "cancelled"]:
+                all_done = False  # Keep checking if not finished
+
+        if all_done:
+            print("All annotation tasks are finished.")
+            break  # Exit loop if all batches are done
+
+        time.sleep(10)
+    return "batch_results", results

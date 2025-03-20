@@ -13,16 +13,15 @@ class Pipeline:
         self.config = confection.Config(config)
 
     def __call__(self, *args, **kwargs):
-        outputs = []
+        outputs = {}
         for name, component in self.components:
             component_params = inspect.signature(component).parameters
             component_kwargs = {param: self.config[param] for param in component_params if param in self.config}
 
             # Compute the outputs
             output_name, output = component(**component_kwargs)
-            #outputs.append(output)
-            print(output)
             self.config[output_name] = output
+            outputs[output_name] = output
 
         if len(outputs) == 1:
             outputs = outputs[0]

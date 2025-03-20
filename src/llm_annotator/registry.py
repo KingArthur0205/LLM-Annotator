@@ -18,6 +18,7 @@ def simple_llm_pipe(model_list: List[str],
     pipe.add_pipe(name="build_examples", idx=1)
     pipe.add_pipe(name="build_annotation_prompt", idx=2)
     pipe.add_pipe(name="process_observations", idx=3)
-    pipe.add_pipe(name="process_requests", idx=3)
+    pipe.add_pipe(name="process_requests", idx=4)
+    pipe.add_pipe(name="fetch_batch", idx=5)
 
     return pipe
