@@ -25,43 +25,34 @@ def save_results(batch_results: Dict, transcript_df: pd.DataFrame, feature: str)
                         response = json.loads(line)  # Convert JSON string to dictionary
 
                         # Extract custom_id and ensure it follows the format "request_X"
-                        custom_id = response.get("custom_id", "")
-                        if custom_id.startswith("request_"):
-                            row_index = int(custom_id.split("_")[1])
+                        body = response.get("response", {}).get("body", {})
+                        choices = body.get("choices", [])
+                        if choices:
+                            message_content = choices[0].get("message", {}).get("content", "{}")
+                            try:
+                                parsed_content = json.loads(message_content)  # Convert string to dictionary
+                            except json.JSONDecodeError:
+                                print(
+                                    f"Skipping response at index {row_index}: Invalid JSON content - {message_content}")
+                                continue
 
-                            # Extract response body content
-                            body = response.get("response", {}).get("body", {})
-                            choices = body.get("choices", [])
-
-                            if choices:
-                                # Extract feature value from the assistant's message content
-                                message_content = choices[0].get("message", {}).get("content", "{}")
-
-                                # Ensure message_content is properly formatted as JSON
-                                try:
-                                    parsed_content = json.loads(message_content)  # Convert string to dictionary
-                                except json.JSONDecodeError:
-                                    print(
-                                        f"Skipping response at index {row_index}: Invalid JSON content - {message_content}")
-                                    continue
-
-                                feature_value = parsed_content.get(feature, None)
-
-                                if feature_value is not None:
-                                    # Assign feature value to the respective model column
-                                    transcript_df.at[row_index, model] = feature_value
+                            for utt_id, value in parsed_content.items():
+                                matching_row = transcript_df['uttid'] == utt_id
+                                transcript_df.loc[matching_row, model] = value
                     except Exception as e:
                         print(f"Error processing response line: {line}. Error: {e}")
-
             except Exception as e:
                 print(f"Error reading batch content for model {model}: {e}")
         elif model == "claude-3-7":
             for response in batch_content:
-                custom_id = response.custom_id
-
-                if custom_id.startswith("request_"):
-                    row_index = int(custom_id.split("_")[1])
-                    transcript_df.at[row_index, model] = json.loads(response.result.message.content[0].text).get(feature, None)
+                try:
+                    response = json.loads(response.result.message.content[0].text.strip().removeprefix("```json").removesuffix("```").strip())
+                    for utt_id, value in response.items():
+                        matching_row = transcript_df['uttid'] == utt_id
+                        transcript_df.loc[matching_row, model] = value
+                except:
+                    print(f"Error processing {response}.")
+                    continue
 
     # Save the annotated dataframe
     transcript_df.to_csv(f"{feature_dir}/atn_df.csv", index=False)

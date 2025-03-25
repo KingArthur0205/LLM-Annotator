@@ -27,6 +27,7 @@ def annotate(
         feature_list: List[str],
         transcript_path: str,
         sheet_source: str,
+        n_uttr: int,
         if_wait=False
 ):
     dataloader = DataLoader(sheet_source=sheet_source,
@@ -43,7 +44,8 @@ def annotate(
                            feature=feature_list[0],
                            transcript_df=transcript_df,
                            feature_df=feature_df,
-                           if_wait=if_wait)
+                           if_wait=if_wait,
+                           n_uttr=n_uttr)
     return pipe()
 
 
@@ -71,12 +73,17 @@ def set_working_dir():
 
 def main():
     set_working_dir()
-    #outputs = annotate(model_list=["claude-3-7"],
-    #                   obs_list=["146"],
-    #                   feature_list=["Mathcompetent"],
-    #                   transcript_path="./data/alltranscripts_423_clean_segmented.csv",
-    #                   sheet_source="./data/MOL Roles Features.xlsx",
-    #                   if_wait=False)
+
+    """
+    outputs = annotate(model_list=["claude-3-7"],
+                       obs_list=["146"],
+                       feature_list=["Mathcompetent"],
+                       transcript_path="./data/alltranscripts_423_clean_segmented.csv",
+                       sheet_source="./data/MOL Roles Features.xlsx",
+                       if_wait=True,
+                       n_uttr=10) 
+                       """
+
 
     fetch(sheet_source="./data/MOL Roles Features.xlsx",
           transcript_path="./data/alltranscripts_423_clean_segmented.csv",

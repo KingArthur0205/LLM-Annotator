@@ -57,8 +57,8 @@ def create_request(model: str, prompt: str, idx: int):
                     max_tokens=1000,
                     system=[{"type": "text",
                              "text": "You are an expert at structured data annotation. You will be given "
-                                     "unstructured student dialogue from math class discussions and should "
-                                     "annotate the utterance. You must provide results in JSON format.\nExample: {'Mathcompetent': 0}"}],
+                                     "a list of student dialogue utterances from math class discussions and should "
+                                     "annotate the utterance and return the full list. You must provide results in JSON format."}],
                     messages=[{"role": "user",
                                "content": prompt,
                                }]
@@ -71,8 +71,8 @@ def create_request(model: str, prompt: str, idx: int):
                     "body": {"model": "gpt-4o",
                              "messages": [{"role": "system",
                                            "content": "You are an expert at structured data annotation. You will be given "
-                                           "unstructured student dialogue from math class discussions and should "
-                                           "annotate the utterance. You must provide results in JSON format.\nExample: {'Mathcompetent': 0}"},
+                                                      "a list of student dialogue utterances from math class discussions and should "
+                                                      "annotate the utterance and return the full list. You must provide results in JSON format."},
                                           {"role": "user",
                                            "content": prompt}],
                              "max_tokens": 1000,
@@ -88,6 +88,7 @@ def process_observations(transcript_df: pd.DataFrame,
                          model_list: List[str],
                          feature_dict: Dict,
                          prompt_template: str,
+                         n_uttr: int,
                          obs_list: List[str] = None,
                          if_context: bool = False,
                          fwd_window: int = 0,
@@ -110,17 +111,23 @@ def process_observations(transcript_df: pd.DataFrame,
     for model in model_list:
         model_reqs[model] = []
 
-    for idx, row in eligible_rows.iterrows():
+    for i in range(0, len(eligible_rows), n_uttr):
         # Build context window if requested
         # window = ""
         # if if_context:
         #    window = self._build_context_window(row, atn_df, obs_groups, fwd_window, bwd_window)
+        batch_uttr = eligible_rows.iloc[i:i + n_uttr]
 
-        prompt = prompt_template.format(dialogue=row['dialogue'])
+        combined_dialogue = "\n".join(
+            f"{row['uttid']}: {row['dialogue']}"
+            for j, row in batch_uttr.iterrows()
+        )
+
+        prompt = prompt_template.format(dialogue=combined_dialogue)
         # Get annotations from each model
         for model in model_list:
             # Create the model
-            request = create_request(model=model, prompt=prompt, idx=idx)
+            request = create_request(model=model, prompt=prompt, idx=i)
             model_reqs[model].append(request)
 
     return "model_requests", model_reqs
@@ -130,7 +137,7 @@ def process_observations(transcript_df: pd.DataFrame,
 def process_requests(model_requests: Dict, feature: str) -> Dict:
     batches = {}
     for model, req_list in model_requests.items():
-        req_list = req_list[:2]
+        #req_list = req_list[:2]
 
         if model == "gpt-4o":
             batch = batch_openai_annotate(requests=req_list)
@@ -140,6 +147,7 @@ def process_requests(model_requests: Dict, feature: str) -> Dict:
             
         batches[model] = batch
     store_batch(batches=batches, feature=feature)
+
     return "batches", batches
 
 
@@ -153,11 +161,11 @@ def fetch_batch(batches: Dict = None,
 
     if not batches:
         batches = load_batch_files(batch_dir, feature)
+    if_gpt_finished = False if "gpt-4o" in batches.keys() else True
+    if_claude_finished = False if "claude-3-7" in batches.keys() else True
 
     # Define the function that processes batches and updates results
-    def process_batches():
-        all_done = True
-
+    def process_batches(if_gpt_finished: bool, if_claude_finished: bool):
         for model, batch in batches.items():
             batch_id = batch.id
             if model == "gpt-4o":
@@ -166,19 +174,26 @@ def fetch_batch(batches: Dict = None,
                 status = response.status
 
                 # Retrieve completed results
-                if status == "completed":
+                if status == "completed" and not if_gpt_finished:
                     result = client.files.content(response.output_file_id).read().decode("utf-8")
-                    print(f"Results for {model} is completed")
+                    print(f"{model} has completed batching.")
                     results[model] = result
+                    if_gpt_finished = True
+                elif status == "expired":
+                    print(f"{model}: Batch {batch_id} has expired.")
+                elif status == "failed":
+                    print(f"{model}: Batch {batch_id} has failed.")
+                elif status == "in_progress":
+                    print(f"{model}: Batch {batch_id} is still in progress.")
 
             elif model == "claude-3-7":
                 client = anthropic.Anthropic()
-                response = client.messages.batches.retrieve(batch_id)
-                status = response.processing_status
+                status = client.messages.batches.retrieve(batch_id).processing_status
                 results[model] = []
 
-                if status == "ended":
-                    print(f"Results for {model} is completed")
+                if status == "ended" and not if_claude_finished:
+                    print(f"{model} has completed batching.")
+                    if_claude_finished = True
                     # Initialize entry variable
 
                     for result in client.messages.batches.results(message_batch_id=batch_id):
@@ -189,24 +204,25 @@ def fetch_batch(batches: Dict = None,
                             print(f"Error for {result.custom_id}: {result.result.error}")
                         else:
                             print(f"Unexpected result type: {result.result.type}")
+                elif status == "expired":
+                    print(f"{model}: Batch {batch_id} has expired.")
+                elif not status == "ended":
+                    print(f"{model}: Batch {batch_id} is still in progress.")
 
-            if status not in ["completed", "failed", "cancelled"]:
-                all_done = False  # Keep checking if not finished
-
-        return all_done
+        return if_gpt_finished, if_claude_finished
 
     if if_wait:
         # Use the loop to keep checking until all batches are done
         while True:
-            all_done = process_batches()
+            if_gpt_finished, if_claude_finished = process_batches(if_gpt_finished, if_claude_finished)
 
-            if all_done:
+            if if_gpt_finished and if_claude_finished:
                 print("All annotation tasks are finished.")
                 break  # Exit loop if all batches are done
 
             time.sleep(10)
     else:
         # Execute the batch processing just once without waiting
-        process_batches()
+        process_batches(if_gpt_finished, if_claude_finished)
 
     return "batch_results", results
