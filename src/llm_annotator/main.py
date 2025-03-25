@@ -10,6 +10,7 @@ from openai import OpenAI
 import llm_annotator.prompt_parser
 import llm_annotator.annotator
 import llm_annotator.postprocess
+from llm_annotator.registry import fetch_pipe
 from llm_annotator.pipeline import Pipeline
 from anthropic.types.messages.batch_create_params import Request
 from anthropic.types.message_create_params import MessageCreateParamsNonStreaming
@@ -25,7 +26,8 @@ def annotate(
         obs_list: List[str],
         feature_list: List[str],
         transcript_path: str,
-        sheet_source: str
+        sheet_source: str,
+        if_wait=False
 ):
     dataloader = DataLoader(sheet_source=sheet_source,
                             transcript_path=transcript_path)
@@ -40,7 +42,23 @@ def annotate(
                            feature_dict=feature_dict,
                            feature=feature_list[0],
                            transcript_df=transcript_df,
-                           feature_df=feature_df)
+                           feature_df=feature_df,
+                           if_wait=if_wait)
+    return pipe()
+
+
+def fetch(feature: str,
+          transcript_path: str,
+          sheet_source: str,
+          batch_dir: str = None):
+    dataloader = DataLoader(sheet_source=sheet_source,
+                            transcript_path=transcript_path)
+    # Read in the feature file and transcript file
+    transcript_df = dataloader.get_transcript()
+
+    pipe = fetch_pipe(feature=feature,
+                      transcript_df=transcript_df,
+                      batch_dir=batch_dir)
     return pipe()
 
 
@@ -53,13 +71,20 @@ def set_working_dir():
 
 def main():
     set_working_dir()
-    outputs = annotate(model_list=["gpt-4o"],
-                       obs_list=["146"],
-                       feature_list=["Mathcompetent"],
-                       transcript_path="./data/alltranscripts_423_clean_segmented.csv",
-                       sheet_source="./data/MOL Roles Features.xlsx")
-    a = outputs["batch_results"]
-    print(a['gpt-4o'])
+    #outputs = annotate(model_list=["claude-3-7"],
+    #                   obs_list=["146"],
+    #                   feature_list=["Mathcompetent"],
+    #                   transcript_path="./data/alltranscripts_423_clean_segmented.csv",
+    #                   sheet_source="./data/MOL Roles Features.xlsx",
+    #                   if_wait=False)
+
+    fetch(sheet_source="./data/MOL Roles Features.xlsx",
+          transcript_path="./data/alltranscripts_423_clean_segmented.csv",
+          feature="Mathcompetent")
+
+
+    # a = outputs["batch_results"]
+    # print(a['gpt-4o'])
 
 
 if __name__ == "__main__":

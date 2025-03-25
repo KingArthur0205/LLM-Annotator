@@ -1,5 +1,7 @@
 import pandas as pd
 import time
+import os
+import json
 
 from typing import Dict, List
 from tqdm import tqdm
@@ -10,7 +12,8 @@ from anthropic.types.message_create_params import MessageCreateParamsNonStreamin
 from anthropic.types.messages.batch_create_params import Request
 
 from llm_annotator import utils
-from llm_annotator.llm import Annotation, batch_anthropic_annotate, batch_openai_annotate
+from llm_annotator.llm import Annotation, batch_anthropic_annotate, batch_openai_annotate, store_batch
+from llm_annotator.utils import find_latest_dir, Batch, load_batch_files
 
 
 def mark_ineligible_rows(model_list: List[str],
@@ -52,14 +55,13 @@ def create_request(model: str, prompt: str, idx: int):
                 params=MessageCreateParamsNonStreaming(
                     model="claude-3-7-sonnet-20250219",
                     max_tokens=1000,
-                    messages=[{"role": "system",
-                               "content": "You are an expert at structured data annotation. You will be given "
-                                          "unstructured student dialogue from math class discussions and should "
-                                          "annotate the utterance provide results in JSON format."},
-                              {"role": "user",
+                    system=[{"type": "text",
+                             "text": "You are an expert at structured data annotation. You will be given "
+                                     "unstructured student dialogue from math class discussions and should "
+                                     "annotate the utterance. You must provide results in JSON format.\nExample: {'Mathcompetent': 0}"}],
+                    messages=[{"role": "user",
                                "content": prompt,
-                               }],
-                    response_model=Annotation.model_json_schema()
+                               }]
                 )
             )
         case "gpt-4o":
@@ -70,7 +72,7 @@ def create_request(model: str, prompt: str, idx: int):
                              "messages": [{"role": "system",
                                            "content": "You are an expert at structured data annotation. You will be given "
                                            "unstructured student dialogue from math class discussions and should "
-                                           "annotate the utterance and provide results in JSON format."},
+                                           "annotate the utterance. You must provide results in JSON format.\nExample: {'Mathcompetent': 0}"},
                                           {"role": "user",
                                            "content": prompt}],
                              "max_tokens": 1000,
@@ -125,7 +127,7 @@ def process_observations(transcript_df: pd.DataFrame,
 
 
 @utils.component("process_requests")
-def process_requests(model_requests: Dict) -> Dict:
+def process_requests(model_requests: Dict, feature: str) -> Dict:
     batches = {}
     for model, req_list in model_requests.items():
         req_list = req_list[:2]
@@ -135,19 +137,25 @@ def process_requests(model_requests: Dict) -> Dict:
 
         elif model == "claude-3-7":
             batch = batch_anthropic_annotate(requests=req_list)
+            
         batches[model] = batch
+    store_batch(batches=batches, feature=feature)
     return "batches", batches
 
 
 @utils.component("fetch_batch")
-def fetch_batch(batches: Dict):
+def fetch_batch(batches: Dict = None,
+                batch_dir: str = None,
+                feature: str = "",
+                if_wait: bool = True):
     results = {}
     print("Fetching results...")
 
-    for model, batch in batches.items():
-        print(f"{model}: batch")
+    if not batches:
+        batches = load_batch_files(batch_dir, feature)
 
-    while True:
+    # Define the function that processes batches and updates results
+    def process_batches():
         all_done = True
 
         for model, batch in batches.items():
@@ -165,20 +173,40 @@ def fetch_batch(batches: Dict):
 
             elif model == "claude-3-7":
                 client = anthropic.Anthropic()
-                response = client.get_batch(batch_id)
-                status = response.get("status")
+                response = client.messages.batches.retrieve(batch_id)
+                status = response.processing_status
+                results[model] = []
 
-                if status == "completed":
-                    result = client.get_batch_results(batch_id)
+                if status == "ended":
                     print(f"Results for {model} is completed")
-                    results[model] = result
+                    # Initialize entry variable
+
+                    for result in client.messages.batches.results(message_batch_id=batch_id):
+                        if result.result.type == "succeeded":
+                            # Access message content properly - assuming text is inside a content list
+                            results[model].append(result)
+                        elif result.result.type == "error":
+                            print(f"Error for {result.custom_id}: {result.result.error}")
+                        else:
+                            print(f"Unexpected result type: {result.result.type}")
 
             if status not in ["completed", "failed", "cancelled"]:
                 all_done = False  # Keep checking if not finished
 
-        if all_done:
-            print("All annotation tasks are finished.")
-            break  # Exit loop if all batches are done
+        return all_done
 
-        time.sleep(10)
+    if if_wait:
+        # Use the loop to keep checking until all batches are done
+        while True:
+            all_done = process_batches()
+
+            if all_done:
+                print("All annotation tasks are finished.")
+                break  # Exit loop if all batches are done
+
+            time.sleep(10)
+    else:
+        # Execute the batch processing just once without waiting
+        process_batches()
+
     return "batch_results", results

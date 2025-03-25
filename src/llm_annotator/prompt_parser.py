@@ -31,7 +31,7 @@ def build_annotation_prompt(feature_dict: Dict,
                             ) -> str:
     """Create the annotation prompt template."""
     if annotation_prompt_path == "":
-        template = "Task Overview: In this task, you will classify student utterances from a mathematics classroom transcript. Your goal is to categorize each utterance based on the following label. You must give either 0 or 1 without further text:\n\n"
+        template = "Task Overview: In this task, you will classify student utterances from a mathematics classroom transcript. Your goal is to categorize each utterance based on the following label. You must output in JSON format with keys:\n\n"
 
         for feature, meta in feature_dict.items():
             template += (
