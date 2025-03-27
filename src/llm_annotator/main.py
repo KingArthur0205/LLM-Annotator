@@ -56,7 +56,6 @@ def set_working_dir():
 
 
 def main():
-    set_working_dir()
 
 
     #outputs = annotate(model_list=["claude-3-7"],
@@ -71,9 +70,7 @@ def main():
     fetch(feature="Mathcompetent")
 
 
-    # a = outputs["batch_results"]
-    # print(a['gpt-4o'])
-
+set_working_dir()
 
 if __name__ == "__main__":
     main()

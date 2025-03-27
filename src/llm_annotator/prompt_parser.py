@@ -22,6 +22,16 @@ def build_examples(feature_dict: Dict, feature: str) -> str:
     return "examples", template
 
 
+def generate_feature_def(feature_dict: Dict):
+    template = ""
+    for feature, meta in feature_dict.items():
+        template += (
+            f"{feature}: {meta.get('definition', feature)}. {meta['format']}\n\n"
+            f"Examples: \n"
+        )
+    return template
+
+
 # TO-DO: Implement batching(built-in and batching-API)
 @utils.component("build_annotation_prompt")
 def build_annotation_prompt(feature_dict: Dict,
@@ -30,19 +40,13 @@ def build_annotation_prompt(feature_dict: Dict,
                             examples: str = "",
                             ) -> str:
     """Create the annotation prompt template."""
+    definition = generate_feature_def(feature_dict=feature_dict)
     if annotation_prompt_path == "":
         template = "Task Overview: In this task, you will classify student utterances from a mathematics classroom transcript."\
                    "You will be given a list of dialogue utterances. Each utterance is formatted as <uttid>:<utterance text>."\
                    "Your goal is to categorize each utterance based on the following label. You must output in JSON format the annotations for all <uttid>.\n\n"
 
-        """
-        for feature, meta in feature_dict.items():
-            template += (
-                f"{feature}: {meta.get('definition', feature)}. {meta['format']}\n\n"
-                f"Examples: \n"
-            )
-        """
-
+        template += definition
         template += examples
 
         template += (
@@ -58,8 +62,14 @@ def build_annotation_prompt(feature_dict: Dict,
         # TO-DO: Implement this read-in file
         with open(annotation_prompt_path, "r") as f:
             template = f.read()
-        #template = PromptBuilder.replace_template_variables(template, features, list(features.keys())[0])
-        return None
+        template = replace_template_variables(template=template, definition=definition, examples=examples)
+        return "prompt_template", template
+
+
+def replace_template_variables(template: str, definition: str, examples: str):
+    template.format(definition=definition)
+    template.format(examples=examples)
+    return template
 
 
 def extract_template_variables(template_text: str):
