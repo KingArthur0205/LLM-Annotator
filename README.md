@@ -52,7 +52,7 @@ annotate(
 
 ### 2. Fetch
 To fetch the result and generate annotations, we can use the ```fetch()``` function:
-```
+```python
 from llm_annotator.main import fetch
 
 fetch(feature="Mathcompetent", batch_dir="path_to_batch")
