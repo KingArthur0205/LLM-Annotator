@@ -45,12 +45,22 @@ annotate(
     feature="Mathcompetent",
     transcript_path="data/alltranscripts_423_clean_segmented.csv",
     sheet_source="data/MOL Roles Features.xlsx",
+    n_uttr=30, # No. of utterances to include in one LLM request
     if_wait=True # This keeps the program running until the annotations are generated.
 )
 ```
 
-### 2. Structure
-The 
+### 2. Fetch
+To fetch the result and generate annotations, we can use the ```fetch()``` function:
+```
+from llm_annotator.main import fetch
+
+fetch(feature="Mathcompetent", batch_dir="path_to_batch")
+```
+Note: The ```batch_dir``` parameter can be ignored. In this case, the results of the last batch request will be fetched.
+
+### 3. Structure
+The structure of the setup is presented below.
 ```
 llm_annotator
 |--data
@@ -63,9 +73,9 @@ llm_annotator
 |   |--feature1
 |   |   |--batch_meta
 |   |   |   |--date_time1
-|   |   |   |   |--claude-3-7.json
-|   |   |   |   |--gpt-4o.json
-|   |   |   |   |--metadata.json
+|   |   |   |   |--claude-3-7.json # Meta-data of claude batch request
+|   |   |   |   |--gpt-4o.json # Meta-data of GPT-4o batch request
+|   |   |   |   |--metadata.json # Meta-data of runtime
 |   |--feature2
 ...
 ```
