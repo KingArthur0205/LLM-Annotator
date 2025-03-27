@@ -6,12 +6,29 @@ import llm_annotator.utils as utils
 from typing import Dict
 
 
+def extract_json_code_block(response_text):
+    start_tag = "```json"
+    end_tag = "```"
+
+    start_index = response_text.find(start_tag)
+    if start_index == -1:
+        return None  # or raise an error
+
+    start_index += len(start_tag)
+    end_index = response_text.find(end_tag, start_index)
+    if end_index == -1:
+        return None  # or raise an error
+
+    json_block = response_text[start_index:end_index].strip()
+    return json_block
+
 @utils.component("save_results")
 def save_results(batch_results: Dict, transcript_df: pd.DataFrame, feature: str):
     # Create "results" directory if it does not exist
     results_dir = "result"
     feature_dir = os.path.join(results_dir, feature)
     os.makedirs(feature_dir, exist_ok=True)
+    transcript_df = transcript_df.copy()
 
     for model, batch_content in batch_results.items():
         if model == "gpt-4o":
@@ -48,6 +65,7 @@ def save_results(batch_results: Dict, transcript_df: pd.DataFrame, feature: str)
                 try:
                     response_text = response.result.message.content[0].text
                     if "```json" in response_text:
+                        response_text = extract_json_code_block(response_text)
                         response_text = response_text.strip().removeprefix("```json").removesuffix("```").strip()
                     response = json.loads(response_text)
 

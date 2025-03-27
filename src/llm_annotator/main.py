@@ -58,16 +58,16 @@ def set_working_dir():
 def main():
 
 
-    #outputs = annotate(model_list=["claude-3-7"],
-    #                   obs_list=["146"],
-    #                   feature="Mathcompetent",
-    #                   transcript_path="./data/alltranscripts_423_clean_segmented.csv",
-    #                   sheet_source="./data/MOL Roles Features.xlsx",
-    #                   if_wait=False,
-    #                   n_uttr=10)
+    outputs = annotate(model_list=["claude-3-7"],
+                       obs_list=["146"],
+                       feature="Mathcompetent",
+                       transcript_path="./data/alltranscripts_423_clean_segmented.csv",
+                       sheet_source="./data/MOL Roles Features.xlsx",
+                       if_wait=True,
+                       n_uttr=10)
 
 
-    fetch(feature="Mathcompetent")
+    #fetch(feature="Mathcompetent")
 
 
 set_working_dir()

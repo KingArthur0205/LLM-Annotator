@@ -44,7 +44,7 @@ def build_annotation_prompt(feature_dict: Dict,
     if annotation_prompt_path == "":
         template = "Task Overview: In this task, you will classify student utterances from a mathematics classroom transcript."\
                    "You will be given a list of dialogue utterances. Each utterance is formatted as <uttid>:<utterance text>."\
-                   "Your goal is to categorize each utterance based on the following label. You must output in JSON format the annotations for all <uttid>.\n\n"
+                   "Your goal is to categorize each utterance based on the following label. You must output in JSON format the annotations for all <uttid>. Output only the json annotations and no additional text.\n\n"
 
         template += definition
         template += examples
