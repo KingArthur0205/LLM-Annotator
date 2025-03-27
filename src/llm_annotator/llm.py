@@ -93,8 +93,51 @@ def batch_anthropic_annotate(requests: List[Request]):
     )
     return message_batch
 
+def store_meta(model_list: List[str],
+               feature: str,
+               obs_list: List[str],
+               transcript_path: str,
+               sheet_source: str,
+               if_wait: bool,
+               n_uttr: int,
+               annotation_prompt_path: str,
+               timestamp: str):
+    results_dir = "result"
+    feature_dir = os.path.join(results_dir, feature)
+    os.makedirs(feature_dir, exist_ok=True)
 
-def store_batch(batches: Dict, feature: str):
+    # Create meta dir
+    meta_dir = os.path.join(feature_dir, "batch_meta")
+    os.makedirs(meta_dir, exist_ok=True)
+
+    # Create timestamp directory
+    timestamp_dir = os.path.join(meta_dir, f"{timestamp}")
+    os.makedirs(timestamp_dir, exist_ok=True)
+
+    # Create metadata dictionary
+    metadata = {
+        "model_list": model_list,
+        "feature": feature,
+        "obs_list": obs_list,
+        "transcript_path": transcript_path,
+        "sheet_source": sheet_source,
+        "if_wait": if_wait,
+        "n_uttr": n_uttr,
+        "annotation_prompt_path": annotation_prompt_path,
+        "timestamp": timestamp
+    }
+
+    # Save metadata as JSON
+    meta_file_path = os.path.join(timestamp_dir, "metadata.json")
+    with open(meta_file_path, 'w') as f:
+        json.dump(metadata, f, indent=4)
+
+    print(f"Metadata saved to {meta_file_path}")
+
+
+def store_batch(batches: Dict,
+                feature: str,
+                timestamp: str):
     results_dir = "result"
     feature_dir = os.path.join(results_dir, feature)
     os.makedirs(feature_dir, exist_ok=True)
@@ -103,7 +146,6 @@ def store_batch(batches: Dict, feature: str):
     batch_meta_dir = os.path.join(feature_dir, "batch_meta")
     os.makedirs(batch_meta_dir, exist_ok=True)
 
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
     batch_dir = os.path.join(batch_meta_dir, f"{timestamp}")
     os.makedirs(batch_dir, exist_ok=True)
     for model, batch_file in batches.items():

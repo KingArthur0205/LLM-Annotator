@@ -46,7 +46,11 @@ def save_results(batch_results: Dict, transcript_df: pd.DataFrame, feature: str)
         elif model == "claude-3-7":
             for response in batch_content:
                 try:
-                    response = json.loads(response.result.message.content[0].text.strip().removeprefix("```json").removesuffix("```").strip())
+                    response_text = response.result.message.content[0].text
+                    if "```json" in response_text:
+                        response_text = response_text.strip().removeprefix("```json").removesuffix("```").strip()
+                    response = json.loads(response_text)
+
                     for utt_id, value in response.items():
                         matching_row = transcript_df['uttid'] == utt_id
                         transcript_df.loc[matching_row, model] = value

@@ -5,6 +5,8 @@ import numpy as np
 
 from typing import List, Dict
 
+import llm_annotator.utils as utils
+
 try:
     from google.colab import drive
     from google.colab import auth
@@ -66,7 +68,6 @@ class DataLoader:
                 raise ValueError("The provided source is neither a valid local file nor a valid Google Sheet ID.")
 
             sheet_names = [sheet.title for sheet in feature_sheet.worksheets()]
-            print("Available Sheets:", sheet_names)
 
             # Extract the individual features from seperate sheets.
             self.sheets_data = {}
@@ -85,35 +86,39 @@ class DataLoader:
 
         return self.sheets_data
 
-    def get_features(self):
-        return self.sheets_data
 
-    def get_transcript(self):
-        return self.transcript_df
+@utils.component("load_feature")
+def load_features(dataloader: DataLoader):
+    return "feature_df", dataloader.sheets_data
 
-    # TO-DO: Change the examples to be dynamic
-    def generate_features(self, feature_list: List[str] = [])\
-            -> Dict:
-        if self.sheets_data is None:
-            self.__load_feautres()
 
-        self.features = {}
-        for sheet_name, df in self.sheets_data.items():  # Iterate over sheet names and dataframes
-            if sheet_name in ["Agent", "Talk", "Conceptual", "Discursive", "Lexical"]:  # Filter sheets
-                for idx, row in df.iterrows():
-                    feature = row['Code']
-                    if feature in feature_list:
-                        self.features[feature] = {
-                            "definition": row["Definition"],
-                            "format": "Answer 1 if the utterance relates to the category, 0 if the utterances doesn't relate to the category.",  # Fixed typo "unkown" -> "unknown"
-                            "example1": row["example1"] if "example1" in df.columns else "",
-                            "example2": row["example2"] if "example2" in df.columns else "",
-                            "example3": row["example3"] if "example3" in df.columns else "",
-                            "nonexample1": row["nonexample1"] if "nonexample1" in df.columns else "",
-                            "nonexample2": row["nonexample2"] if "nonexample2" in df.columns else "",
-                            "nonexample3": row["nonexample3"] if "nonexample3" in df.columns else "",
-                        }
-        return self.features
+@utils.component("load_transcript")
+def load_transcript(dataloader: DataLoader):
+    return "transcript_df", dataloader.transcript_df
+
+
+@utils.component("generate_features")
+# TO-DO: Change the examples to be dynamic
+def generate_features(dataloader: DataLoader, feature: str = [])\
+        -> Dict:
+    if dataloader.sheets_data is None:
+        dataloader.__load_feautres()
+
+    dataloader.features = {}
+    for sheet_name, df in dataloader.sheets_data.items():  # Iterate over sheet names and dataframes
+        for idx, row in df.iterrows():
+            if "Code" in df.columns and feature == row['Code']:
+                dataloader.features[feature] = {
+                    "definition": row["Definition"],
+                    "format": "Answer 1 if the utterance relates to the category, 0 if the utterances doesn't relate to the category.",  # Fixed typo "unkown" -> "unknown"
+                    "example1": row["example1"] if "example1" in df.columns else "",
+                    "example2": row["example2"] if "example2" in df.columns else "",
+                    "example3": row["example3"] if "example3" in df.columns else "",
+                    "nonexample1": row["nonexample1"] if "nonexample1" in df.columns else "",
+                    "nonexample2": row["nonexample2"] if "nonexample2" in df.columns else "",
+                    "nonexample3": row["nonexample3"] if "nonexample3" in df.columns else "",
+                }
+    return "feature_dict", dataloader.features
 
 
 

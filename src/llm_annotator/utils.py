@@ -211,7 +211,6 @@ def find_latest_dir(directory_path: str):
 
 
 def load_batch_files(batch_dir: str = None, feature: str = "") -> Dict:
-
     try:
         batch_dir = f"result/{feature}/batch_meta" if not batch_dir else batch_dir
         latest_dir = os.path.join(batch_dir, find_latest_dir(batch_dir))
@@ -239,3 +238,19 @@ def load_batch_files(batch_dir: str = None, feature: str = "") -> Dict:
         return batches
     except:
         raise FileNotFoundError("No batch file is found.")
+
+
+def load_meta_file(batch_dir: str, feature: str):
+    if not batch_dir and not feature:
+        raise ValueError("Input batch_dir and feature cannot both be empty.")
+
+    batch_dir = f"result/{feature}/batch_meta" if not batch_dir else batch_dir
+    latest_dir = os.path.join(batch_dir, find_latest_dir(batch_dir))
+    metadata_path = os.path.join(latest_dir, "metadata.json")
+    if os.path.exists(metadata_path):
+        try:
+            with open(metadata_path, 'r') as f:
+                metadata = json.load(f)
+        except:
+            raise FileNotFoundError("Cannot find metadata.json.")
+    return metadata

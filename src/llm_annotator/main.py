@@ -24,43 +24,27 @@ from llm_annotator.llm import openai_annotate, anthropic_annotate, batch_anthrop
 def annotate(
         model_list: List[str],
         obs_list: List[str],
-        feature_list: List[str],
+        feature: str,
         transcript_path: str,
         sheet_source: str,
         n_uttr: int,
         if_wait=False
 ):
-    dataloader = DataLoader(sheet_source=sheet_source,
-                            transcript_path=transcript_path)
-
-    # Read in the feature file and transcript file
-    feature_df = dataloader.get_features()
-    transcript_df = dataloader.get_transcript()
-    feature_dict = dataloader.generate_features(feature_list)
-
     pipe = simple_llm_pipe(model_list=model_list,
                            obs_list=obs_list,
-                           feature_dict=feature_dict,
-                           feature=feature_list[0],
-                           transcript_df=transcript_df,
-                           feature_df=feature_df,
+                           feature=feature,
+                           transcript_path=transcript_path,
+                           sheet_source=sheet_source,
                            if_wait=if_wait,
                            n_uttr=n_uttr)
     return pipe()
 
 
-def fetch(feature: str,
-          transcript_path: str,
-          sheet_source: str,
-          batch_dir: str = None):
-    dataloader = DataLoader(sheet_source=sheet_source,
-                            transcript_path=transcript_path)
-    # Read in the feature file and transcript file
-    transcript_df = dataloader.get_transcript()
+def fetch(batch_dir: str = None,
+          feature: str = None):
 
-    pipe = fetch_pipe(feature=feature,
-                      transcript_df=transcript_df,
-                      batch_dir=batch_dir)
+    pipe = fetch_pipe(batch_dir=batch_dir,
+                      feature=feature)
     return pipe()
 
 
@@ -74,20 +58,17 @@ def set_working_dir():
 def main():
     set_working_dir()
 
-    """
-    outputs = annotate(model_list=["claude-3-7"],
-                       obs_list=["146"],
-                       feature_list=["Mathcompetent"],
-                       transcript_path="./data/alltranscripts_423_clean_segmented.csv",
-                       sheet_source="./data/MOL Roles Features.xlsx",
-                       if_wait=True,
-                       n_uttr=10) 
-                       """
+
+    #outputs = annotate(model_list=["claude-3-7"],
+    #                   obs_list=["146"],
+    #                   feature="Mathcompetent",
+    #                   transcript_path="./data/alltranscripts_423_clean_segmented.csv",
+    #                   sheet_source="./data/MOL Roles Features.xlsx",
+    #                   if_wait=False,
+    #                   n_uttr=10)
 
 
-    fetch(sheet_source="./data/MOL Roles Features.xlsx",
-          transcript_path="./data/alltranscripts_423_clean_segmented.csv",
-          feature="Mathcompetent")
+    fetch(feature="Mathcompetent")
 
 
     # a = outputs["batch_results"]

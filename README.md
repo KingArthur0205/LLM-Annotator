@@ -45,12 +45,13 @@ annotate(
     obs_list=["146", "170"],
     feature_list=["Mathcompetent"],
     transcript_path="data/alltranscripts_423_clean_segmented.csv",
-    sheet_source="data/MOL Roles Features.xlsx"
+    sheet_source="data/MOL Roles Features.xlsx",
+    if_wait=True
 )
 ```
 
-### 2. Configuring LLM Backends
-You can modify the pipeline to use different LLMs based on your requirements. The framework automatically detects the API keys and selects the corresponding models.
+### 2. Configuring to Wait
+The ```if_wait``` parameter, if set to ```True```, loops and 
 
 ## Contributing
 Feel free to submit issues, feature requests, and pull requests to enhance **LLM Annotator**.

@@ -3,8 +3,9 @@ import time
 import os
 import json
 
+
 from typing import Dict, List
-from tqdm import tqdm
+from datetime import datetime
 
 import anthropic
 import openai
@@ -12,7 +13,7 @@ from anthropic.types.message_create_params import MessageCreateParamsNonStreamin
 from anthropic.types.messages.batch_create_params import Request
 
 from llm_annotator import utils
-from llm_annotator.llm import Annotation, batch_anthropic_annotate, batch_openai_annotate, store_batch
+from llm_annotator.llm import Annotation, batch_anthropic_annotate, batch_openai_annotate, store_batch, store_meta
 from llm_annotator.utils import find_latest_dir, Batch, load_batch_files
 
 
@@ -134,10 +135,19 @@ def process_observations(transcript_df: pd.DataFrame,
 
 
 @utils.component("process_requests")
-def process_requests(model_requests: Dict, feature: str) -> Dict:
+def process_requests(model_requests: Dict,
+                     feature: str,
+                     model_list: List[str],
+                     obs_list: List[str],
+                     transcript_path: str,
+                     sheet_source: str,
+                     if_wait: bool,
+                     n_uttr: int,
+                     annotation_prompt_path: str
+                     ) -> Dict:
     batches = {}
     for model, req_list in model_requests.items():
-        #req_list = req_list[:2]
+        req_list = req_list[:100]
 
         if model == "gpt-4o":
             batch = batch_openai_annotate(requests=req_list)
@@ -146,7 +156,11 @@ def process_requests(model_requests: Dict, feature: str) -> Dict:
             batch = batch_anthropic_annotate(requests=req_list)
             
         batches[model] = batch
-    store_batch(batches=batches, feature=feature)
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+    store_batch(batches=batches, feature=feature, timestamp=timestamp)
+    store_meta(feature=feature, model_list=model_list, obs_list=obs_list, transcript_path=transcript_path,
+               sheet_source=sheet_source, if_wait=if_wait, n_uttr=n_uttr, annotation_prompt_path=annotation_prompt_path,
+               timestamp=timestamp)
 
     return "batches", batches
 
