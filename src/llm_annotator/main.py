@@ -31,6 +31,7 @@ def annotate(
         if_wait=False,
         system_prompt_path: str = "data/prompts/system_prompt.txt",
         prompt_path: str = "",
+        mode: str = ""
 ):
     pipe = simple_llm_pipe(model_list=model_list,
                            obs_list=obs_list,
@@ -66,7 +67,8 @@ def main():
                        transcript_path="./data/alltranscripts_423_clean_segmented.csv",
                        sheet_source="./data/MOL Roles Features.xlsx",
                        if_wait=True,
-                       n_uttr=10)
+                       n_uttr=10,
+                       mode="CoT")
 
 
     #fetch(feature="Mathcompetent")
