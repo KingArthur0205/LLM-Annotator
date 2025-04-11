@@ -12,6 +12,7 @@ LLM Annotator is a powerful framework for **automated data annotation** using st
 ### 0. Create a conda runtime enviornment
 ```bash
 conda create -n llm_annotator python=3.10
+conda activate llm_annotator
 ```
 
 ### 1. Clone the Repository
