@@ -52,7 +52,8 @@ annotate(
     transcript_path="data/alltranscripts_423_clean_segmented.csv",
     sheet_source="data/MOL Roles Features.xlsx",
     n_uttr=30, # No. of utterances to include in one LLM request
-    if_wait=True # This keeps the program running until the annotations are generated.
+    if_wait=True, # This keeps the program running until the annotations are generated.
+    mode="CoT" # This sets the annotations with advanced reasoning techniques
 )
 ```
 
