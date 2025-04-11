@@ -76,12 +76,11 @@ llm_annotator
 |   |--transcript_data.csv
 |--result
 |   |--feature1
-|   |   |--batch_meta
-|   |   |   |--date_time1
-|   |   |   |   |--claude-3-7.json # Meta-data of claude batch request
-|   |   |   |   |--gpt-4o.json # Meta-data of GPT-4o batch request
-|   |   |   |   |--metadata.json # Meta-data of runtime
-|   |   |   |   |--atn_df.csv # Annotated Result
+|   |   |--date_time1
+|   |   |   |--claude-3-7.json # Meta-data of claude batch request
+|   |   |   |--gpt-4o.json # Meta-data of GPT-4o batch request
+|   |   |   |--metadata.json # Meta-data of runtime
+|   |   |   |--atn_df.csv # Annotated Result
 |   |--feature2
 ...
 ```
