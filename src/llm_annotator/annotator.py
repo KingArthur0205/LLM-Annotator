@@ -48,7 +48,7 @@ def group_obs(transcript_df: pd.DataFrame,
     return obs_groups
 
 
-def create_request(model: str, prompt: str, idx: int):
+def create_request(model: str, prompt: str, system_prompt: str, idx: int):
     match model:
         case "claude-3-7":
             return Request(
@@ -57,9 +57,7 @@ def create_request(model: str, prompt: str, idx: int):
                     model="claude-3-7-sonnet-20250219",
                     max_tokens=1000,
                     system=[{"type": "text",
-                             "text": "You are an expert at structured data annotation. You will be given "
-                                     "a list of student dialogue utterances from math class discussions and should "
-                                     "annotate the utterance and return the full list. You must provide results in JSON format."}],
+                             "text": system_prompt}],
                     messages=[{"role": "user",
                                "content": prompt,
                                }]
@@ -71,9 +69,7 @@ def create_request(model: str, prompt: str, idx: int):
                     "url": "/v1/chat/completions",
                     "body": {"model": "gpt-4o",
                              "messages": [{"role": "system",
-                                           "content": "You are an expert at structured data annotation. You will be given "
-                                                      "a list of student dialogue utterances from math class discussions and should "
-                                                      "annotate the utterance and return the full list. You must provide results in JSON format."},
+                                           "content": system_prompt},
                                           {"role": "user",
                                            "content": prompt}],
                              "max_tokens": 1000,
@@ -89,6 +85,7 @@ def process_observations(transcript_df: pd.DataFrame,
                          model_list: List[str],
                          feature_dict: Dict,
                          prompt_template: str,
+                         system_prompt: str,
                          n_uttr: int,
                          obs_list: List[str] = None,
                          if_context: bool = False,
@@ -139,7 +136,7 @@ def process_observations(transcript_df: pd.DataFrame,
         prompt = prompt_template.format(dialogue=combined_dialogue)
 
         for model in model_list:
-            request = create_request(model=model, prompt=prompt, idx=i)
+            request = create_request(model=model, prompt=prompt, system_prompt=system_prompt, idx=i)
             model_reqs[model].append(request)
 
         # Update index for next iteration
@@ -159,6 +156,7 @@ def process_requests(model_requests: Dict,
                      n_uttr: int,
                      annotation_prompt_path: str,
                      prompt_template: str,
+                     system_prompt: str,
                      timestamp: str
                      ) -> Dict:
     batches = {}
@@ -176,7 +174,7 @@ def process_requests(model_requests: Dict,
     store_batch(batches=batches, feature=feature, timestamp=timestamp)
     store_meta(feature=feature, model_list=model_list, obs_list=obs_list, transcript_path=transcript_path,
                sheet_source=sheet_source, if_wait=if_wait, n_uttr=n_uttr, annotation_prompt_path=annotation_prompt_path,
-               timestamp=timestamp, prompt_template=prompt_template)
+               timestamp=timestamp, prompt_template=prompt_template, system_prompt=system_prompt)
 
     return "batches", batches
 

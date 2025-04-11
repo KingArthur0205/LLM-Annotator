@@ -23,13 +23,13 @@ from llm_annotator.llm import openai_annotate, anthropic_annotate, batch_anthrop
 
 def annotate(
         model_list: List[str],
-        obs_list: List[str],
+        obs_list: List[str] | str,
         feature: str,
         transcript_path: str,
         sheet_source: str,
         n_uttr: int,
         if_wait=False,
-        system_prompt_path: str = "",
+        system_prompt_path: str = "data/prompts/system_prompt.txt",
         prompt_path: str = "",
 ):
     pipe = simple_llm_pipe(model_list=model_list,
@@ -60,7 +60,7 @@ def set_working_dir():
 
 
 def main():
-    outputs = annotate(model_list=["claude-3-7", "gpt-4o"],
+    outputs = annotate(model_list=["claude-3-7"],
                        obs_list=["146"],
                        feature="Mathcompetent",
                        transcript_path="./data/alltranscripts_423_clean_segmented.csv",

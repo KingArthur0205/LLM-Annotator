@@ -4,9 +4,7 @@ import re
 from typing import Dict
 
 @utils.component("build_system_prompt")
-def build_system_prompt(system_prompt_path: str = "") -> str:
-    if system_prompt_path == "":
-        return "system_prompt", "You are an expert at structured data annotation. You will be given a list of student dialogue utterances from math class discussions and should annotate the utterance and return the full list. You must provide results in JSON format."
+def build_system_prompt(system_prompt_path: str = "data/prompts/system_prompt.txt") -> str:
     with open(system_prompt_path, "r") as f:
         system_prompt = f.read()
     return "system_prompt", system_prompt
@@ -40,7 +38,7 @@ def generate_feature_def(feature_dict: Dict):
 
 
 # TO-DO: Implement batching(built-in and batching-API)
-@utils.component("build_annotation_prompt")
+@utils.component("build_user_prompt")
 def build_annotation_prompt(feature_dict: Dict,
                             annotation_prompt_path: str = "",
                             if_context: bool = False,

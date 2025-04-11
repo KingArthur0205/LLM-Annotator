@@ -39,13 +39,13 @@ def openai_annotate(prompt: str):
     return annotations
 
 
-def anthropic_annotate(prompt: str):
+def anthropic_annotate(prompt: str, system_prompt: str):
     client = instructor.from_anthropic(Anthropic())
     completion = client.messages.create(
         model="claude-3-7-sonnet-20250219",
         messages=[
             {"role": "system",
-             "content": "You are an expert at structured data annotation. You will be given unstructured student dialogue from math class discussions and should annotate the utternace with appropriate values. Return the output in JSON format."},
+             "content": system_prompt},
             {"role": "user", "content": f"{prompt}"}
         ],
         max_tokens=300,
@@ -103,7 +103,8 @@ def store_meta(model_list: List[str],
                n_uttr: int,
                annotation_prompt_path: str,
                timestamp: str,
-               prompt_template: str):
+               prompt_template: str,
+               system_prompt: str):
     timestamp_dir = create_batch_dir(feature=feature, timestamp=timestamp)
 
     # Create metadata dictionary
@@ -117,7 +118,8 @@ def store_meta(model_list: List[str],
         "n_uttr": n_uttr,
         "annotation_prompt_path": annotation_prompt_path,
         "timestamp": timestamp,
-        "prompt": f"{prompt_template}"
+        "prompt": f"{prompt_template}",
+        "system prompt": system_prompt
     }
 
     # Save metadata as JSON
