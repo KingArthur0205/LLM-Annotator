@@ -8,10 +8,10 @@ from typing import List, Dict
 import llm_annotator.utils as utils
 
 try:
-    from google.colab import drive
-    from google.colab import auth
-    from google.auth import default
-    IN_COLAB = True
+    #from google.colab import drive
+    #from google.colab import auth
+    #from google.auth import default
+    IN_COLAB = False
     print("Running in Google Colab.")
 except ImportError:
     IN_COLAB = False
