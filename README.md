@@ -9,6 +9,11 @@ LLM Annotator is a powerful framework for **automated data annotation** using st
 - **Batch Processing**.
 
 ## Setup
+### 0. Create a conda runtime enviornment
+```bash
+conda create -n llm_annotator python=3.10
+```
+
 ### 1. Clone the Repository
 ```bash
 git clone https://github.com/KingArthur0205/LLM-Annotator.git
@@ -41,7 +46,7 @@ from llm_annotator.main import annotate
 
 annotate(
     model_list=["gpt-4o", "claude-3-7"],
-    obs_list=["146", "170"],
+    obs_list=["146", "170"], # Use "all" to annotate all utterances
     feature="Mathcompetent",
     transcript_path="data/alltranscripts_423_clean_segmented.csv",
     sheet_source="data/MOL Roles Features.xlsx",
