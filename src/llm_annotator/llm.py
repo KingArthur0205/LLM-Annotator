@@ -2,18 +2,18 @@ import instructor
 import os
 import json
 
-import openai
 import anthropic
 
 from datetime import datetime
 from dotenv import load_dotenv, find_dotenv
-from typing import List, Dict, Optional, Any
-from dataclasses import dataclass
+from typing import List, Dict
 
 from pydantic import BaseModel
 from openai import OpenAI
 from anthropic import Anthropic
 from anthropic.types.messages.batch_create_params import Request
+
+from llm_annotator.utils import create_batch_dir
 
 _ = load_dotenv(find_dotenv())
 
@@ -93,6 +93,7 @@ def batch_anthropic_annotate(requests: List[Request]):
     )
     return message_batch
 
+
 def store_meta(model_list: List[str],
                feature: str,
                obs_list: List[str],
@@ -101,18 +102,9 @@ def store_meta(model_list: List[str],
                if_wait: bool,
                n_uttr: int,
                annotation_prompt_path: str,
-               timestamp: str):
-    results_dir = "result"
-    feature_dir = os.path.join(results_dir, feature)
-    os.makedirs(feature_dir, exist_ok=True)
-
-    # Create meta dir
-    meta_dir = os.path.join(feature_dir, "batch_meta")
-    os.makedirs(meta_dir, exist_ok=True)
-
-    # Create timestamp directory
-    timestamp_dir = os.path.join(meta_dir, f"{timestamp}")
-    os.makedirs(timestamp_dir, exist_ok=True)
+               timestamp: str,
+               prompt_template: str):
+    timestamp_dir = create_batch_dir(feature=feature, timestamp=timestamp)
 
     # Create metadata dictionary
     metadata = {
@@ -124,7 +116,8 @@ def store_meta(model_list: List[str],
         "if_wait": if_wait,
         "n_uttr": n_uttr,
         "annotation_prompt_path": annotation_prompt_path,
-        "timestamp": timestamp
+        "timestamp": timestamp,
+        "prompt": f"{prompt_template}"
     }
 
     # Save metadata as JSON
@@ -138,16 +131,7 @@ def store_meta(model_list: List[str],
 def store_batch(batches: Dict,
                 feature: str,
                 timestamp: str):
-    results_dir = "result"
-    feature_dir = os.path.join(results_dir, feature)
-    os.makedirs(feature_dir, exist_ok=True)
-
-    # Create batch dir
-    batch_meta_dir = os.path.join(feature_dir, "batch_meta")
-    os.makedirs(batch_meta_dir, exist_ok=True)
-
-    batch_dir = os.path.join(batch_meta_dir, f"{timestamp}")
-    os.makedirs(batch_dir, exist_ok=True)
+    batch_dir = create_batch_dir(feature=feature, timestamp=timestamp)
     for model, batch_file in batches.items():
         batch_filename = f"{model}.json"
         file_path = os.path.join(batch_dir, batch_filename)
@@ -194,4 +178,4 @@ def store_batch(batches: Dict,
         
         with open(file_path, "w") as f:
             json.dump(batch_metadata, f, indent=2)
-    return "batch_dir", batch_meta_dir
+    return "batch_dir", batch_dir

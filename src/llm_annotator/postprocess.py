@@ -23,11 +23,9 @@ def extract_json_code_block(response_text):
     return json_block
 
 @utils.component("save_results")
-def save_results(batch_results: Dict, transcript_df: pd.DataFrame, feature: str):
+def save_results(batch_results: Dict, transcript_df: pd.DataFrame, feature: str, timestamp: str):
     # Create "results" directory if it does not exist
-    results_dir = "result"
-    feature_dir = os.path.join(results_dir, feature)
-    os.makedirs(feature_dir, exist_ok=True)
+    batch_dir = utils.create_batch_dir(feature=feature, timestamp=timestamp)
     transcript_df = transcript_df.copy()
 
     for model, batch_content in batch_results.items():
@@ -35,8 +33,6 @@ def save_results(batch_results: Dict, transcript_df: pd.DataFrame, feature: str)
             try:
                 # Ensure batch_content is a string and split into lines (each line is a JSON object)
                 batch_lines = batch_content.strip().split("\n")
-
-                print(f"Processing model: {model}, Batch size: {len(batch_lines)}")
                 for line in batch_lines:
                     try:
                         response = json.loads(line)  # Convert JSON string to dictionary
@@ -50,7 +46,7 @@ def save_results(batch_results: Dict, transcript_df: pd.DataFrame, feature: str)
                                 parsed_content = json.loads(message_content)  # Convert string to dictionary
                             except json.JSONDecodeError:
                                 print(
-                                    f"Skipping response at index {row_index}: Invalid JSON content - {message_content}")
+                                    f"Skipping response at line {line}: Invalid JSON content - {message_content}")
                                 continue
 
                             for utt_id, value in parsed_content.items():
@@ -77,5 +73,5 @@ def save_results(batch_results: Dict, transcript_df: pd.DataFrame, feature: str)
                     continue
 
     # Save the annotated dataframe
-    transcript_df.to_csv(f"{feature_dir}/atn_df.csv", index=False)
+    transcript_df.to_csv(f"{batch_dir}/atn_df.csv", index=False)
     return "annotated_df", transcript_df

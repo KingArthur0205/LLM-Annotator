@@ -3,6 +3,13 @@ import re
 
 from typing import Dict
 
+@utils.component("build_system_prompt")
+def build_system_prompt(system_prompt_path: str = "") -> str:
+    if system_prompt_path == "":
+        return "system_prompt", "You are an expert at structured data annotation. You will be given a list of student dialogue utterances from math class discussions and should annotate the utterance and return the full list. You must provide results in JSON format."
+    with open(system_prompt_path, "r") as f:
+        system_prompt = f.read()
+    return "system_prompt", system_prompt
 
 # TO-DO: Change to flexible example structure
 @utils.component("build_examples")

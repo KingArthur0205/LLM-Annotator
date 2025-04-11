@@ -254,3 +254,14 @@ def load_meta_file(batch_dir: str, feature: str):
         except:
             raise FileNotFoundError("Cannot find metadata.json.")
     return metadata
+
+
+def create_batch_dir(feature: str, timestamp: str):
+    results_dir = "result"
+    feature_dir = os.path.join(results_dir, feature)
+    os.makedirs(feature_dir, exist_ok=True)
+
+    # Create batch dir
+    batch_dir = os.path.join(feature_dir, f"{timestamp}")
+    os.makedirs(batch_dir, exist_ok=True)
+    return batch_dir

@@ -1,5 +1,7 @@
-from typing import List, Dict
 import pandas as pd
+
+from typing import List
+from datetime import datetime
 
 from llm_annotator.pipeline import Pipeline
 from llm_annotator.dataloader import DataLoader
@@ -10,12 +12,15 @@ def simple_llm_pipe(model_list: List[str],
                     obs_list: List[str],
                     transcript_path: str,
                     sheet_source: str,
+                    system_prompt_path: str,
+                    prompt_path: str,
                     feature: str,
                     if_wait: bool,
                     n_uttr: int = 1,
                     annotation_prompt_path: str = ""):
     dataloader = DataLoader(sheet_source=sheet_source,
                             transcript_path=transcript_path)
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
     config = {key: value for key, value in locals().items()}
 
     pipe = Pipeline(config=config)

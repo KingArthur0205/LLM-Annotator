@@ -13,7 +13,7 @@ from anthropic.types.message_create_params import MessageCreateParamsNonStreamin
 from anthropic.types.messages.batch_create_params import Request
 
 from llm_annotator import utils
-from llm_annotator.llm import Annotation, batch_anthropic_annotate, batch_openai_annotate, store_batch, store_meta
+from llm_annotator.llm import batch_anthropic_annotate, batch_openai_annotate, store_batch, store_meta
 from llm_annotator.utils import find_latest_dir, Batch, load_batch_files
 
 
@@ -112,24 +112,38 @@ def process_observations(transcript_df: pd.DataFrame,
     for model in model_list:
         model_reqs[model] = []
 
-    for i in range(0, len(eligible_rows), n_uttr):
-        # Build context window if requested
-        # window = ""
-        # if if_context:
-        #    window = self._build_context_window(row, atn_df, obs_groups, fwd_window, bwd_window)
-        batch_uttr = eligible_rows.iloc[i:i + n_uttr]
+    i = 0
+    while i < len(eligible_rows):
+        # Get current segment ID
+        current_segment_id = eligible_rows.iloc[i]['segment_id_1sd']
 
+        # Find the end index - either after n_uttr rows or when segment changes
+        max_idx = min(i + n_uttr, len(eligible_rows))
+        end_idx = i
+
+        for j in range(i, max_idx):
+            if eligible_rows.iloc[j]['segment_id_1sd'] != current_segment_id:
+                break
+            end_idx = j + 1
+
+        # Extract the batch of utterances
+        batch_uttr = eligible_rows.iloc[i:end_idx]
+
+        # Create combined dialogue from batch
         combined_dialogue = "\n".join(
             f"{row['uttid']}: {row['dialogue']}"
-            for j, row in batch_uttr.iterrows()
+            for _, row in batch_uttr.iterrows()
         )
 
+        # Create prompt and model requests
         prompt = prompt_template.format(dialogue=combined_dialogue)
-        # Get annotations from each model
+
         for model in model_list:
-            # Create the model
             request = create_request(model=model, prompt=prompt, idx=i)
             model_reqs[model].append(request)
+
+        # Update index for next iteration
+        i = end_idx if end_idx > i else i + n_uttr
 
     return "model_requests", model_reqs
 
@@ -143,11 +157,13 @@ def process_requests(model_requests: Dict,
                      sheet_source: str,
                      if_wait: bool,
                      n_uttr: int,
-                     annotation_prompt_path: str
+                     annotation_prompt_path: str,
+                     prompt_template: str,
+                     timestamp: str
                      ) -> Dict:
     batches = {}
     for model, req_list in model_requests.items():
-        #req_list = req_list[:100]
+        req_list = req_list[:100]
 
         if model == "gpt-4o":
             batch = batch_openai_annotate(requests=req_list)
@@ -156,11 +172,11 @@ def process_requests(model_requests: Dict,
             batch = batch_anthropic_annotate(requests=req_list)
             
         batches[model] = batch
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+
     store_batch(batches=batches, feature=feature, timestamp=timestamp)
     store_meta(feature=feature, model_list=model_list, obs_list=obs_list, transcript_path=transcript_path,
                sheet_source=sheet_source, if_wait=if_wait, n_uttr=n_uttr, annotation_prompt_path=annotation_prompt_path,
-               timestamp=timestamp)
+               timestamp=timestamp, prompt_template=prompt_template)
 
     return "batches", batches
 
