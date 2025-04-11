@@ -5,8 +5,8 @@ from typing import List
 
 
 @utils.component("pre-process")
-def pre_process_transcript(transcript_df: pd.DataFrame, obs_list: List[str]):
-    if obs_list is None:
+def pre_process_transcript(transcript_df: pd.DataFrame, obs_list: List[str] | str):
+    if isinstance(obs_list, str) and obs_list == "all":
         obs_list = transcript_df["obsid"].unique().tolist()
     elif not isinstance(obs_list, list):
         raise ValueError(f"obs_list should be a list, got {type(obs_list)} instead.")
