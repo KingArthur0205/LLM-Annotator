@@ -61,17 +61,17 @@ def set_working_dir():
 
 
 def main():
-    outputs = annotate(model_list=["claude-3-7"],
-                       obs_list="all",
-                       feature="Mathcompetent",
-                       transcript_path="./data/alltranscripts_423_clean_segmented.csv",
-                       sheet_source="./data/MOL Roles Features.xlsx",
-                       if_wait=True,
-                       n_uttr=10,
-                       mode="CoT")
+    #outputs = annotate(model_list=["gpt-4o"],
+    #                   obs_list="all",
+    #                   feature="Mathcompetent",
+    #                   transcript_path="./data/alltranscripts_423_clean_segmented.csv",
+    #                   sheet_source="./data/MOL Roles Features.xlsx",
+    #                   if_wait=True,
+    #                   n_uttr=10,
+    #                   mode="CoT")
 
 
-    #fetch(feature="Mathcompetent")
+    fetch(feature="Mathcompetent")
 
 
 set_working_dir()

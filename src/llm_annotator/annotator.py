@@ -14,7 +14,7 @@ from anthropic.types.messages.batch_create_params import Request
 
 from llm_annotator import utils
 from llm_annotator.llm import batch_anthropic_annotate, batch_openai_annotate, store_batch, store_meta
-from llm_annotator.utils import find_latest_dir, Batch, load_batch_files
+from llm_annotator.utils import load_batch_files
 
 
 def mark_ineligible_rows(model_list: List[str],
@@ -73,9 +73,10 @@ def create_request(model: str, prompt: str, system_prompt: str, idx: int):
                                           {"role": "user",
                                            "content": prompt}],
                              "max_tokens": 1000,
+                             "logprobs": True,
                              "temperature": 0,
                              "response_format": {
-                                    "type": "json_object"
+                                 "type": "json_object"
                              }}
                     }
 
@@ -161,7 +162,7 @@ def process_requests(model_requests: Dict,
                      ) -> Dict:
     batches = {}
     for model, req_list in model_requests.items():
-        #req_list = req_list[:100]
+        req_list = req_list[:100]
 
         if model == "gpt-4o":
             batch = batch_openai_annotate(requests=req_list)
@@ -209,8 +210,10 @@ def fetch_batch(batches: Dict = None,
                     if_gpt_finished = True
                 elif status == "expired":
                     print(f"{model}: Batch {batch_id} has expired.")
+                    if_gpt_finished = True
                 elif status == "failed":
                     print(f"{model}: Batch {batch_id} has failed.")
+                    if_gpt_finished = True
                 elif status == "in_progress":
                     print(f"{model}: Batch {batch_id} is still in progress.")
 
@@ -234,8 +237,10 @@ def fetch_batch(batches: Dict = None,
                             print(f"Unexpected result type: {result.result.type}")
                 elif status == "expired":
                     print(f"{model}: Batch {batch_id} has expired.")
+                    if_claude_finished = True
                 elif not status == "ended":
                     print(f"{model}: Batch {batch_id} is still in progress.")
+                    if_claude_finished = True
 
         return if_gpt_finished, if_claude_finished
 

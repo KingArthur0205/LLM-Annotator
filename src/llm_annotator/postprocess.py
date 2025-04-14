@@ -22,10 +22,15 @@ def extract_json_code_block(response_text):
     json_block = response_text[start_index:end_index].strip()
     return json_block
 
+
 @utils.component("save_results")
-def save_results(batch_results: Dict, transcript_df: pd.DataFrame, feature: str, timestamp: str):
-    # Create "results" directory if it does not exist
-    batch_dir = utils.create_batch_dir(feature=feature, timestamp=timestamp)
+def save_results(batch_results: Dict, transcript_df: pd.DataFrame, feature: str, timestamp: str = None):
+    if timestamp is None:
+        batch_dir = f"result/{feature}"
+        timestamp = os.path.join(batch_dir, utils.find_latest_dir(batch_dir))
+    else:
+        # Create "results" directory if it does not exist
+        batch_dir = utils.create_batch_dir(feature=feature, timestamp=timestamp)
     transcript_df = transcript_df.copy()
 
     for model, batch_content in batch_results.items():
@@ -42,6 +47,7 @@ def save_results(batch_results: Dict, transcript_df: pd.DataFrame, feature: str,
                         choices = body.get("choices", [])
                         if choices:
                             message_content = choices[0].get("message", {}).get("content", "{}")
+                            log_probs = choices[0].get("logprobs", {}).get("content", "{}")
                             try:
                                 parsed_content = json.loads(message_content)  # Convert string to dictionary
                             except json.JSONDecodeError:
@@ -49,9 +55,17 @@ def save_results(batch_results: Dict, transcript_df: pd.DataFrame, feature: str,
                                     f"Skipping response at line {line}: Invalid JSON content - {message_content}")
                                 continue
 
+                            result_log_probs = []
+                            for prob in log_probs:
+                                if prob['token'] in ("0", "1"):
+                                    result_log_probs.append(round(prob['logprob'], 3))
+
+                            index = 0
                             for utt_id, value in parsed_content.items():
                                 matching_row = transcript_df['uttid'] == utt_id
                                 transcript_df.loc[matching_row, model] = value
+                                transcript_df.loc[matching_row, f"{model}_logprob"] = result_log_probs[index]
+                                index += 1
                     except Exception as e:
                         print(f"Error processing response line: {line}. Error: {e}")
             except Exception as e:
