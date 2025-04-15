@@ -4,7 +4,7 @@ __all__ = [
     "annotate"
 ]
 
-from .main import annotate
+from .main import annotate, fetch
 from . import dataloader
 from . import utils
 
