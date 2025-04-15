@@ -7,4 +7,3 @@ venv/
 *.csv
 result/
 alltranscripts_423_clean_segmented.csv
-*.ipynb
