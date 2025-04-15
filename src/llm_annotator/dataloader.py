@@ -7,22 +7,21 @@ from typing import List, Dict
 
 import llm_annotator.utils as utils
 
-try:
-    from google.colab import drive
-    from google.colab import auth
-    from google.auth import default
-    IN_COLAB = True
-    print("Running in Google Colab.")
-except ImportError:
-    IN_COLAB = False
-    print("Running in Local Enviornment.")
-
-
 class DataLoader:
     def __init__(self,
                  sheet_source: str,
                  transcript_path: str,
                  save_dir: str = "../results"):
+        try:
+            from google.colab import drive
+            from google.colab import auth
+            from google.auth import default
+            IN_COLAB = True
+            print("Running in Google Colab.")
+        except ImportError:
+            IN_COLAB = False
+            print("Running in Local Enviornment.")
+
         if IN_COLAB:
             auth.authenticate_user()
             creds, _ = default()
