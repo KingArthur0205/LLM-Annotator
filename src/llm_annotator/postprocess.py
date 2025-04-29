@@ -24,7 +24,7 @@ def extract_json_code_block(response_text):
 
 
 @utils.component("save_results")
-def save_results(batch_results: Dict, transcript_df: pd.DataFrame, feature: str, timestamp: str = None):
+def save_results(batch_results: Dict, transcript_df: pd.DataFrame, feature: str, timestamp: str = None, save_dir: str = None):
     if timestamp is None:
         batch_dir = f"result/{feature}"
         timestamp = os.path.join(batch_dir, utils.find_latest_dir(batch_dir))
@@ -88,4 +88,6 @@ def save_results(batch_results: Dict, transcript_df: pd.DataFrame, feature: str,
 
     # Save the annotated dataframe
     transcript_df.to_csv(f"{batch_dir}/atn_df.csv", index=False)
+    if save_dir is not None:
+        transcript_df.to_csv(f"{save_dir}/atn_df.csv", index=False)
     return "annotated_df", transcript_df

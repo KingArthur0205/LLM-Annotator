@@ -46,7 +46,8 @@ def annotate(
 
 
 def fetch(batch_dir: str = None,
-          feature: str = None):
+          feature: str = None,
+          save_dir: str = None):
 
     pipe = fetch_pipe(batch_dir=batch_dir,
                       feature=feature)
