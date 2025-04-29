@@ -42,7 +42,7 @@ def annotate(
                            sheet_source=sheet_source,
                            if_wait=if_wait,
                            n_uttr=n_uttr)
-    return pipe()
+    pipe()
 
 
 def fetch(batch_dir: str = None,
@@ -51,7 +51,7 @@ def fetch(batch_dir: str = None,
 
     pipe = fetch_pipe(batch_dir=batch_dir,
                       feature=feature)
-    return pipe()
+    pipe()
 
 
 def set_working_dir():
