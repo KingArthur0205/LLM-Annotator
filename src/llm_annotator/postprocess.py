@@ -87,7 +87,8 @@ def save_results(batch_results: Dict, transcript_df: pd.DataFrame, feature: str,
                     continue
 
     # Save the annotated dataframe
-    transcript_df.to_csv(f"{batch_dir}/atn_df.csv", index=False)
-    if save_dir is not None:
-        transcript_df.to_csv(f"{save_dir}/atn_df.csv", index=False)
+    if batch_results:
+        transcript_df.to_csv(f"{batch_dir}/atn_df.csv", index=False)
+        if save_dir is not None:
+            transcript_df.to_csv(f"{save_dir}/atn_df.csv", index=False)
     return "annotated_df", transcript_df
