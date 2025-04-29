@@ -50,7 +50,8 @@ def fetch(batch_dir: str = None,
           save_dir: str = None):
 
     pipe = fetch_pipe(batch_dir=batch_dir,
-                      feature=feature)
+                      feature=feature,
+                      save_dir=save_dir)
     pipe()
 
 
@@ -62,15 +63,15 @@ def set_working_dir():
 
 
 def main():
-    outputs = annotate(model_list=["gpt-4o"],
-                       obs_list=["146"],
-                       feature="Mathcompetent",
-                       transcript_path="./data/alltranscripts_423_clean_segmented.csv",
-                       sheet_source="./data/MOL Roles Features.xlsx",
-                       prompt_path="data/prompts/base.txt",
-                       if_wait=True,
-                       n_uttr=10,
-                       mode="CoT")
+    annotate(model_list=["gpt-4o"],
+               obs_list=["146"],
+               feature="Mathcompetent",
+               transcript_path="./data/alltranscripts_423_clean_segmented.csv",
+               sheet_source="./data/MOL Roles Features.xlsx",
+               prompt_path="data/prompts/base.txt",
+               if_wait=True,
+               n_uttr=10,
+               mode="CoT")
 
 
     #fetch(feature="Mathcompetent")
