@@ -1,0 +1,32 @@
+<Task Overview>
+You are tasked with classifying student utterances from a mathematics classroom transcript.
+
+You will be given a list of dialogue utterances. Each utterance is formatted as:
+<uttid>: <utterance text>
+
+For each utterance, assign exactly one label based on the provided label definitions. 
+Focus on the **meaning and intent** of the utterance, even if it is fragmented, grammatically incorrect, or informal.
+
+Classification Instructions:
+- Use only labels from the provided list.
+- Assign exactly one label per utterance.
+- Base your decision on the overall purpose or function of the utterance, not minor wording variations.
+- If an utterance could fit multiple labels, select the label that best matches its **primary intent**.
+- If the utterance is ambiguous, select the most reasonable label based on its apparent context.
+
+You must output your annotations in **strict JSON format**:
+- Use the <uttid> as the key.
+- Use the assigned label as a string value.
+- Output only a valid JSON object with no additional explanation or commentary.
+
+</Task Overview>
+
+<Feature Definition>
+{feature}
+</Feature Definition>
+
+<Utterances>
+Format your output as a JSON object mapping <uttid> to label.
+Utterances:
+{dialogue}
+</Utterances>
