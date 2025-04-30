@@ -158,11 +158,12 @@ def process_requests(model_requests: Dict,
                      annotation_prompt_path: str,
                      prompt_template: str,
                      system_prompt: str,
-                     timestamp: str
+                     timestamp: str,
+                     if_test: bool = False
                      ) -> Dict:
     batches = {}
     for model, req_list in model_requests.items():
-        #req_list = req_list[:100]
+        req_list = req_list[:100] if if_test else req_list
 
         if model == "gpt-4o":
             batch = batch_openai_annotate(requests=req_list)
