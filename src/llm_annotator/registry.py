@@ -1,3 +1,5 @@
+import os.path
+
 import pandas as pd
 
 from typing import List
@@ -10,7 +12,7 @@ from llm_annotator.utils import load_meta_file
 
 def simple_llm_pipe(model_list: List[str],
                     obs_list: List[str],
-                    transcript_path: str,
+                    transcript_source: str,
                     sheet_source: str,
                     system_prompt_path: str,
                     prompt_path: str,
@@ -19,7 +21,7 @@ def simple_llm_pipe(model_list: List[str],
                     n_uttr: int = 1,
                     annotation_prompt_path: str = ""):
     dataloader = DataLoader(sheet_source=sheet_source,
-                            transcript_source=transcript_path)
+                            transcript_source=transcript_source)
     timestamp = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
     config = {key: value for key, value in locals().items()}
 
@@ -43,15 +45,17 @@ def simple_llm_pipe(model_list: List[str],
 def fetch_pipe(batch_dir: str, feature: str, save_dir: str):
     if_wait = False
     metadata = load_meta_file(batch_dir=batch_dir, feature=feature)
-    transcript_path = metadata.get("transcript_path", "")
+    transcript_source = metadata.get("transcript_source", "")
     sheet_source = metadata.get("sheet_source", "")
     annotation_prompt_path = metadata.get("annotation_prompt_path", "")
     feature = metadata.get("feature", "")
-    transcript_df = pd.read_csv(transcript_path)
+    dataloader = DataLoader(sheet_source=sheet_source,
+                            transcript_source=transcript_source)
 
     config = {key: value for key, value in locals().items()}
 
     pipe = Pipeline(config=config)
-    pipe.add_pipe(name="fetch_batch", idx=0)
-    pipe.add_pipe(name="save_results", idx=1)
+    pipe.add_pipe(name="load_transcript", idx=0)
+    pipe.add_pipe(name="fetch_batch", idx=1)
+    pipe.add_pipe(name="save_results", idx=2)
     return pipe
