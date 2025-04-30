@@ -19,7 +19,7 @@ def simple_llm_pipe(model_list: List[str],
                     n_uttr: int = 1,
                     annotation_prompt_path: str = ""):
     dataloader = DataLoader(sheet_source=sheet_source,
-                            transcript_path=transcript_path)
+                            transcript_source=transcript_path)
     timestamp = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
     config = {key: value for key, value in locals().items()}
 

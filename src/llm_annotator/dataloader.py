@@ -24,20 +24,24 @@ except ImportError:
     IN_COLAB = False
     print("Running in Local Enviornment.")
 
+
 class DataLoader:
     def __init__(self,
                  sheet_source: str,
-                 transcript_path: str,
+                 transcript_source: str,
                  save_dir: str = "../results"):
         self.gc = gc
         self.save_dir = save_dir
-        self.transcript_df = self.__load_transcript(transcript_path)
+        self.transcript_df = self.__load_transcript(transcript_source)
         self.sheets_data = self.__load_features(sheet_source)
         self.features = {}
 
-    def __load_transcript(self, transcript_path:str):
+    def __load_transcript(self, transcript_source: str):
         try:
-            return pd.read_csv(transcript_path)
+            if os.path.exists(transcript_source):
+                return pd.read_csv(transcript_source)
+            else:
+                return self.gc.open_by_key(transcript_source)
         except:
             raise FileNotFoundError("Transcript file not found")
 
