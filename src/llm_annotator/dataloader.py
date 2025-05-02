@@ -41,7 +41,9 @@ class DataLoader:
             if os.path.exists(transcript_source):
                 return pd.read_csv(transcript_source)
             else:
-                return self.gc.open_by_key(transcript_source)
+                sheet = self.gc.open_by_key(transcript_source)
+                data = sheet.get_all_records()
+                return pd.DataFrame(data)
         except:
             raise FileNotFoundError("Transcript file not found")
 
