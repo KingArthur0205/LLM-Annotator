@@ -56,6 +56,7 @@ annotate(
     mode="CoT" # This sets the annotations with advanced reasoning techniques
 )
 ```
+We provided a tutorial python notebook. To access, use [this link](https://colab.research.google.com/github/KingArthur0205/LLM-Annotator/blob/main/Annotator_Tutorial%20.ipynb).
 
 ### 2. Fetch
 To fetch the result and generate annotations, we can use the ```fetch()``` function:
