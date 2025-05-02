@@ -68,7 +68,7 @@ def main():
     annotate(model_list=["gpt-4o"],
                obs_list=["146"],
                feature="Mathcompetent",
-               transcript_path="./data/alltranscripts_423_clean_segmented.csv",
+               transcript_source="./data/alltranscripts_423_clean_segmented.csv",
                sheet_source="./data/MOL Roles Features.xlsx",
                prompt_path="data/prompts/base.txt",
                if_wait=True,
