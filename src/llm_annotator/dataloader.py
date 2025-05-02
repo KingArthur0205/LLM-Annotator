@@ -42,7 +42,7 @@ class DataLoader:
                 return pd.read_csv(transcript_source)
             else:
                 try:
-                    sheet = self.gc.open_by_key(transcript_source)
+                    sheet = self.gc.open_by_key(transcript_source).sheet1
                     data = sheet.get_all_records()
                     return pd.DataFrame(data)
                 except:
