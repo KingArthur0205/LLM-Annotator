@@ -41,10 +41,16 @@ class DataLoader:
             if os.path.exists(transcript_source):
                 return pd.read_csv(transcript_source)
             else:
-                sheet = self.gc.open_by_key(transcript_source)
-                data = sheet.get_all_records()
-                return pd.DataFrame(data)
-        except:
+                try:
+                    sheet = self.gc.open_by_key(transcript_source)
+                    data = sheet.get_all_records()
+                    return pd.DataFrame(data)
+                except:
+                    print("Trying to convert into pd.DataFrame.")
+                    file = self.drive.CreateFile({'id': transcript_source})
+                    file.GetContentFile('temp.csv')
+                    return pd.read_csv('temp.csv')
+        except FileNotFoundError:
             raise FileNotFoundError("Transcript file not found")
 
     def __load_features(self, source: str):
