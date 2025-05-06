@@ -219,6 +219,7 @@ def load_batch_files(save_dir: str, batch_dir: str = None, feature: str = "") ->
         # Read from a specified result folder
         else:
             batch_dir = save_dir + f"/result/{feature}"
+        print(batch_dir)
         latest_dir = os.path.join(batch_dir, find_latest_dir(batch_dir))
 
         batch_list = [d for d in os.listdir(latest_dir)]
