@@ -30,7 +30,7 @@ def save_results(batch_results: Dict, transcript_df: pd.DataFrame, feature: str,
         timestamp = os.path.join(batch_dir, utils.find_latest_dir(batch_dir))
     else:
         # Create "results" directory if it does not exist
-        batch_dir = utils.create_batch_dir(feature=feature, timestamp=timestamp)
+        batch_dir = utils.create_batch_dir(save_dir=save_dir, feature=feature, timestamp=timestamp)
     transcript_df = transcript_df.copy()
 
     for model, batch_content in batch_results.items():

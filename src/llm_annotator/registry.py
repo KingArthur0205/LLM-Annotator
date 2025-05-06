@@ -46,7 +46,7 @@ def simple_llm_pipe(model_list: List[str],
 
 def fetch_pipe(batch_dir: str, feature: str, save_dir: str):
     if_wait = False
-    metadata = load_meta_file(batch_dir=batch_dir, feature=feature)
+    metadata = load_meta_file(batch_dir=batch_dir, feature=feature, save_dir=save_dir)
     transcript_source = metadata.get("transcript_source", "")
     sheet_source = metadata.get("sheet_source", "")
     annotation_prompt_path = metadata.get("annotation_prompt_path", "")
