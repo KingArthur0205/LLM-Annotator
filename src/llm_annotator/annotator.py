@@ -174,7 +174,7 @@ def process_requests(model_requests: Dict,
             
         batches[model] = batch
 
-    store_batch(batches=batches, feature=feature, timestamp=timestamp)
+    store_batch(batches=batches, feature=feature, timestamp=timestamp, save_dir=save_dir)
     store_meta(feature=feature, model_list=model_list, obs_list=obs_list, transcript_source=transcript_source,
                sheet_source=sheet_source, if_wait=if_wait, n_uttr=n_uttr, annotation_prompt_path=annotation_prompt_path,
                timestamp=timestamp, prompt_template=prompt_template, system_prompt=system_prompt, save_dir=save_dir)
