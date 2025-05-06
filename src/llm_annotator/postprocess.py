@@ -34,6 +34,7 @@ def save_results(batch_results: Dict, transcript_df: pd.DataFrame, feature: str,
         else:
             batch_dir = save_dir + f"/result/{feature}"
         timestamp = os.path.join(batch_dir, utils.find_latest_dir(batch_dir))
+        batch_dir = os.path.join(batch_dir, timestamp)
     else:
         # Create "results" directory if it does not exist
         batch_dir = utils.create_batch_dir(save_dir=save_dir, feature=feature, timestamp=timestamp)
