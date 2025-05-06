@@ -183,7 +183,8 @@ def process_requests(model_requests: Dict,
 
 
 @utils.component("fetch_batch")
-def fetch_batch(batches: Dict = None,
+def fetch_batch(save_dir: str,
+                batches: Dict = None,
                 batch_dir: str = None,
                 feature: str = "",
                 if_wait: bool = True):
@@ -191,7 +192,7 @@ def fetch_batch(batches: Dict = None,
     print("Fetching results...")
 
     if not batches:
-        batches = load_batch_files(batch_dir, feature)
+        batches = load_batch_files(batch_dir, feature, save_dir=save_dir)
     if_gpt_finished = False if "gpt-4o" in batches.keys() else True
     if_claude_finished = False if "claude-3-7" in batches.keys() else True
 
