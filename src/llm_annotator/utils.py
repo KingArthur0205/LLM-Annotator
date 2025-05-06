@@ -181,6 +181,8 @@ def valid_kwargs(kwargs: dict[str, Any], func: Callable) -> dict[str, Any]:
 
 def find_latest_dir(directory_path: str):
     try:
+        print("Hi")
+        print(os.listdir(directory_path))
         all_dirs = [d for d in os.listdir(directory_path) if os.path.isdir(os.path.join(directory_path, d))]
     except FileNotFoundError:
         print(f"Error: The directory '{directory_path}' was not found.")
