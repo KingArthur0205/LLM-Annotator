@@ -210,9 +210,15 @@ def find_latest_dir(directory_path: str):
     return latest_dir
 
 
-def load_batch_files(batch_dir: str = None, feature: str = "") -> Dict:
+def load_batch_files(save_dir: str, batch_dir: str = None, feature: str = "") -> Dict:
     try:
-        batch_dir = f"result/{feature}" if not batch_dir else batch_dir
+        if not save_dir:
+            if not os.path.exists(f"result/{feature}"):
+                raise FileNotFoundError("The result folder doesn't exist.")
+            batch_dir = f"result/{feature}" if not batch_dir else batch_dir
+        # Read from a specified result folder
+        else:
+            batch_dir = save_dir + f"/result/{feature}"
         latest_dir = os.path.join(batch_dir, find_latest_dir(batch_dir))
 
         batch_list = [d for d in os.listdir(latest_dir)]
