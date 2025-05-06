@@ -26,7 +26,13 @@ def extract_json_code_block(response_text):
 @utils.component("save_results")
 def save_results(batch_results: Dict, transcript_df: pd.DataFrame, feature: str, timestamp: str = None, save_dir: str = None):
     if timestamp is None:
-        batch_dir = f"result/{feature}"
+        if not save_dir:
+            if not os.path.exists(f"result/{feature}"):
+                raise FileNotFoundError("The result folder doesn't exist.")
+            batch_dir = f"result/{feature}"
+        # Read from a specified result folder
+        else:
+            batch_dir = save_dir + f"/result/{feature}"
         timestamp = os.path.join(batch_dir, utils.find_latest_dir(batch_dir))
     else:
         # Create "results" directory if it does not exist
