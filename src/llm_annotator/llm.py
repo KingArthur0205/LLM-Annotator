@@ -104,8 +104,9 @@ def store_meta(model_list: List[str],
                annotation_prompt_path: str,
                timestamp: str,
                prompt_template: str,
-               system_prompt: str):
-    timestamp_dir = create_batch_dir(feature=feature, timestamp=timestamp)
+               system_prompt: str,
+               save_dir: str):
+    timestamp_dir = create_batch_dir(save_dir=save_dir, feature=feature, timestamp=timestamp)
 
     # Create metadata dictionary
     metadata = {
@@ -114,6 +115,7 @@ def store_meta(model_list: List[str],
         "obs_list": obs_list,
         "transcript_source": transcript_source,
         "sheet_source": sheet_source,
+        "save_dir": timestamp_dir,
         "if_wait": if_wait,
         "n_uttr": n_uttr,
         "annotation_prompt_path": annotation_prompt_path,
@@ -132,8 +134,9 @@ def store_meta(model_list: List[str],
 
 def store_batch(batches: Dict,
                 feature: str,
+                save_dir: str,
                 timestamp: str):
-    batch_dir = create_batch_dir(feature=feature, timestamp=timestamp)
+    batch_dir = create_batch_dir(save_dir=save_dir, feature=feature, timestamp=timestamp)
     for model, batch_file in batches.items():
         batch_filename = f"{model}.json"
         file_path = os.path.join(batch_dir, batch_filename)

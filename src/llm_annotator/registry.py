@@ -19,6 +19,7 @@ def simple_llm_pipe(model_list: List[str],
                     feature: str,
                     if_wait: bool,
                     if_test: bool,
+                    save_dir: str,
                     n_uttr: int = 1,
                     annotation_prompt_path: str = ""):
     dataloader = DataLoader(sheet_source=sheet_source,

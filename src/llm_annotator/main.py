@@ -32,6 +32,7 @@ def annotate(
         system_prompt_path: str = "data/prompts/system_prompt.txt",
         prompt_path: str = "",
         if_test: bool = False,
+        save_dir="",
         mode: str = ""
 ):
     pipe = simple_llm_pipe(model_list=model_list,
@@ -43,6 +44,7 @@ def annotate(
                            sheet_source=sheet_source,
                            if_wait=if_wait,
                            if_test=if_test,
+                           save_dir=save_dir,
                            n_uttr=n_uttr)
     pipe()
 

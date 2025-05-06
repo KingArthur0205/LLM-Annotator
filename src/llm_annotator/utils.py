@@ -256,8 +256,8 @@ def load_meta_file(batch_dir: str, feature: str):
     return metadata
 
 
-def create_batch_dir(feature: str, timestamp: str):
-    results_dir = "result"
+def create_batch_dir(save_dir: str, feature: str, timestamp: str):
+    results_dir = os.path.join(save_dir, "result")
     feature_dir = os.path.join(results_dir, feature)
     os.makedirs(feature_dir, exist_ok=True)
 
