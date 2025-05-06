@@ -181,8 +181,6 @@ def valid_kwargs(kwargs: dict[str, Any], func: Callable) -> dict[str, Any]:
 
 def find_latest_dir(directory_path: str):
     try:
-        print("Hi")
-        print(os.listdir(directory_path))
         all_dirs = [d for d in os.listdir(directory_path) if os.path.isdir(os.path.join(directory_path, d))]
     except FileNotFoundError:
         print(f"Error: The directory '{directory_path}' was not found.")
@@ -255,7 +253,7 @@ def load_meta_file(batch_dir: str, feature: str, save_dir: str):
         batch_dir = f"result/{feature}" if not batch_dir else batch_dir
     # Read from a specified result folder
     else:
-        batch_dir = save_dir + f"result/{feature}"
+        batch_dir = save_dir + f"/result/{feature}"
     latest_dir = os.path.join(batch_dir, find_latest_dir(batch_dir))
     metadata_path = os.path.join(latest_dir, "metadata.json")
     if os.path.exists(metadata_path):
