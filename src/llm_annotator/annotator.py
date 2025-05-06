@@ -192,7 +192,7 @@ def fetch_batch(save_dir: str,
     print("Fetching results...")
 
     if not batches:
-        batches = load_batch_files(batch_dir, feature, save_dir=save_dir)
+        batches = load_batch_files(batch_dir=batch_dir, feature=feature, save_dir=save_dir)
     if_gpt_finished = False if "gpt-4o" in batches.keys() else True
     if_claude_finished = False if "claude-3-7" in batches.keys() else True
 
