@@ -241,12 +241,17 @@ def load_batch_files(batch_dir: str = None, feature: str = "") -> Dict:
 
 
 def load_meta_file(batch_dir: str, feature: str, save_dir: str):
-    if not batch_dir and not feature and not save_dir:
-        raise ValueError("Input batch_dir, save_dir and feature cannot all be empty.")
+    if not feature:
+        raise ValueError("Input feature cannot be empty.")
+    if not batch_dir and not save_dir:
+        raise ValueError("Input batch_dir and save_dir cannot all be empty.")
+
+    # Read from local result folder
     if not save_dir:
         if not os.path.exists(f"result/{feature}"):
             raise FileNotFoundError("The result folder doesn't exist.")
         batch_dir = f"result/{feature}" if not batch_dir else batch_dir
+    # Read from a specified result folder
     else:
         batch_dir = save_dir + f"result/{feature}"
     latest_dir = os.path.join(batch_dir, find_latest_dir(batch_dir))
