@@ -49,11 +49,14 @@ annotate(
     model_list=["gpt-4o", "claude-3-7"],
     obs_list=["146", "170"], # Use "all" to annotate all utterances
     feature="Mathcompetent",
-    transcript_path="data/alltranscripts_423_clean_segmented.csv",
-    sheet_source="data/MOL Roles Features.xlsx",
+    transcript_source="xxxxx", # Can be either path or Google ID
+    sheet_source="xxxxx", # Can be either path or Google ID
+    prompt_path="data/prompts/prompt.txt", # Path to the user prompt
+    system_prompt_path="data/prompts/system_prompt.txt",
     n_uttr=30, # No. of utterances to include in one LLM request
     if_wait=True, # This keeps the program running until the annotations are generated.
     mode="CoT" # This sets the annotations with advanced reasoning techniques
+    save_dir="/content/Drive/result", # Directory to save the results into
 )
 ```
 We provided a tutorial python notebook. To access, use [this link](https://colab.research.google.com/github/KingArthur0205/LLM-Annotator/blob/main/Annotator_Tutorial%20.ipynb).
@@ -63,7 +66,11 @@ To fetch the result and generate annotations, we can use the ```fetch()``` funct
 ```python
 from llm_annotator.main import fetch
 
-fetch(feature="Mathcompetent", batch_dir="path_to_batch")
+feature = "Mathcompetent"
+save_dir = "/content/Drive/result"
+time_stamp="2025-05-06_13:38:36"
+
+fetch(feature=feature, timestamp=time_stamp, save_dir=save_dir)
 ```
 Note: The ```batch_dir``` parameter can be ignored. In this case, the results of the last batch request will be fetched.
 
