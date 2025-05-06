@@ -210,12 +210,12 @@ def find_latest_dir(directory_path: str):
     return latest_dir
 
 
-def load_batch_files(save_dir: str, batch_dir: str = None, feature: str = "") -> Dict:
+def load_batch_files(save_dir: str, timestamp: str = None, feature: str = "") -> Dict:
     try:
         if not save_dir:
             if not os.path.exists(f"result/{feature}"):
                 raise FileNotFoundError("The result folder doesn't exist.")
-            batch_dir = f"result/{feature}" if not batch_dir else batch_dir
+            batch_dir = f"result/{feature}" if not timestamp else f"result/{feature}/{timestamp}"
         # Read from a specified result folder
         else:
             batch_dir = save_dir + f"/result/{feature}"
@@ -247,17 +247,17 @@ def load_batch_files(save_dir: str, batch_dir: str = None, feature: str = "") ->
         raise FileNotFoundError("No batch file is found.")
 
 
-def load_meta_file(batch_dir: str, feature: str, save_dir: str):
+def load_meta_file(timestamp: str, feature: str, save_dir: str):
     if not feature:
         raise ValueError("Input feature cannot be empty.")
-    if not batch_dir and not save_dir:
-        raise ValueError("Input batch_dir and save_dir cannot all be empty.")
+    if not timestamp and not save_dir:
+        raise ValueError("Input timestamp and save_dir cannot all be empty.")
 
     # Read from local result folder
     if not save_dir:
         if not os.path.exists(f"result/{feature}"):
             raise FileNotFoundError("The result folder doesn't exist.")
-        batch_dir = f"result/{feature}" if not batch_dir else batch_dir
+        batch_dir = f"result/{feature}" if not timestamp else f"result/{feature}/{timestamp}"
     # Read from a specified result folder
     else:
         batch_dir = save_dir + f"/result/{feature}"

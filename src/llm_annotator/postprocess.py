@@ -25,7 +25,6 @@ def extract_json_code_block(response_text):
 
 @utils.component("save_results")
 def save_results(batch_results: Dict, transcript_df: pd.DataFrame, feature: str, timestamp: str = None, save_dir: str = None):
-    print(timestamp)
     if timestamp is None:
         if not save_dir:
             if not os.path.exists(f"result/{feature}"):
