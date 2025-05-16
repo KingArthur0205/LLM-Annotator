@@ -25,7 +25,7 @@ def mark_ineligible_rows(model_list: List[str],
     atn_feature_dfs = {feature_name: transcript_df.copy() for feature_name in feature_dict.keys()}
 
     # Filter out ineligible rows
-    eligible_rows = transcript_df[(transcript_df['role'] == 'student') &
+    eligible_rows = transcript_df[(transcript_df['role'].str.lower() == 'student') &
                                   (transcript_df['dialogue'].str.split().str.len() >= min_len)]
     ineligible_rows = transcript_df.index.difference(eligible_rows.index)
 
@@ -100,6 +100,8 @@ def process_observations(transcript_df: pd.DataFrame,
                                                           feature_dict=feature_dict,
                                                           transcript_df=transcript_df,
                                                           min_len=min_len)
+    print("Hi")
+    print(eligible_rows)
 
     # Group data by observation ID for faster context window construction
     obs_groups = group_obs(if_context=if_context, obs_list=obs_list, transcript_df=transcript_df)

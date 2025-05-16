@@ -68,14 +68,15 @@ def set_working_dir():
 
 def main():
     annotate(model_list=["gpt-4o"],
-               obs_list=["146"],
+               obs_list=["17"],
                feature="Mathcompetent",
-               transcript_source="./data/alltranscripts_423_clean_segmented.csv",
+               transcript_source="./data/mol.csv",
                sheet_source="./data/MOL Roles Features.xlsx",
                prompt_path="data/prompts/base.txt",
                if_wait=True,
                n_uttr=10,
-               mode="CoT")
+               mode="CoT",
+             if_test=True)
 
 
     #fetch(feature="Mathcompetent")

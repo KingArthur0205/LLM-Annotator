@@ -30,7 +30,7 @@ class DataLoader:
                  sheet_source: str,
                  transcript_source: str,
                  save_dir: str = "../results"):
-        self.gc = gc
+        self.gc = gc if IN_COLAB else None
         self.save_dir = save_dir
         self.transcript_df = self.__load_transcript(transcript_source)
         self.sheets_data = self.__load_features(sheet_source)
