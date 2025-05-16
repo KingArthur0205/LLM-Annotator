@@ -39,6 +39,7 @@ class DataLoader:
     def __load_transcript(self, transcript_source: str):
         try:
             if os.path.exists(transcript_source):
+                print("Loading local file")
                 return pd.read_csv(transcript_source)
             else:
                 try:
