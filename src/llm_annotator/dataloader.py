@@ -109,7 +109,6 @@ def load_features(dataloader: DataLoader):
 
 @utils.component("load_transcript")
 def load_transcript(dataloader: DataLoader):
-    print(dataloader.transcript_df)
     return "transcript_df", dataloader.transcript_df
 
 
