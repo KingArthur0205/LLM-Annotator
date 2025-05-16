@@ -100,8 +100,6 @@ def process_observations(transcript_df: pd.DataFrame,
                                                           feature_dict=feature_dict,
                                                           transcript_df=transcript_df,
                                                           min_len=min_len)
-    print("Hi")
-    print(eligible_rows)
 
     # Group data by observation ID for faster context window construction
     obs_groups = group_obs(if_context=if_context, obs_list=obs_list, transcript_df=transcript_df)
