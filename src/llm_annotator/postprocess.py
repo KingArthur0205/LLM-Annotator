@@ -47,7 +47,6 @@ def save_results(batch_results: Dict, transcript_df: pd.DataFrame, feature: str,
             try:
                 # Ensure batch_content is a string and split into lines (each line is a JSON object)
                 batch_lines = batch_content.strip().split("\n")
-                print(f"Found {len(batch_lines)} GPT-4o response lines")
                 
                 for line_idx, line in enumerate(batch_lines):
                     try:
@@ -62,9 +61,7 @@ def save_results(batch_results: Dict, transcript_df: pd.DataFrame, feature: str,
                             try:
                                 parsed_content = json.loads(message_content)  # Convert string to dictionary
                             except json.JSONDecodeError as e:
-                                print(
-                                    f"Skipping response at line {line_idx}: Invalid JSON content - {message_content}")
-                                print(f"JSON decode error: {e}")
+                                print(f"Skipping invalid JSON response at line {line_idx}")
                                 continue
 
                             result_log_probs = []
@@ -81,21 +78,13 @@ def save_results(batch_results: Dict, transcript_df: pd.DataFrame, feature: str,
                                     transcript_df.loc[matching_row, feature] = value
                                     transcript_df.loc[matching_row, f"{model}_logprob"] = result_log_probs[index] if index < len(result_log_probs) else None
                                     annotations_processed += 1
-                                else:
-                                    print(f"Warning: No matching row found for uttid {utt_id}")
                                 index += 1
-                            print(f"Processed {annotations_processed} annotations from GPT-4o response {line_idx}")
-                    except json.JSONDecodeError as e:
-                        print(f"Error parsing JSON on line {line_idx}: {e}")
-                        print(f"Line content: {line}")
                     except Exception as e:
-                        print(f"Error processing response line {line_idx}: {line}. Error: {e}")
+                        print(f"Error processing GPT-4o response line {line_idx}")
             except Exception as e:
                 print(f"Error reading batch content for model {model}: {e}")
                 
         elif model == "claude-3-7":
-            print(f"Found {len(batch_content)} Claude-3-7 responses")
-            
             if not batch_content:
                 print("Warning: No Claude-3-7 responses found in batch_content")
                 continue
@@ -103,12 +92,9 @@ def save_results(batch_results: Dict, transcript_df: pd.DataFrame, feature: str,
             total_annotations_processed = 0
             for response_idx, response in enumerate(batch_content):
                 try:
-                    print(f"Processing Claude-3-7 response {response_idx + 1}/{len(batch_content)}")
-                    
                     # Check if response has the expected structure
                     if not hasattr(response, 'result'):
                         print(f"Error: Response {response_idx} missing 'result' attribute")
-                        print(f"Response structure: {type(response)}")
                         continue
                         
                     if not hasattr(response.result, 'message'):
@@ -120,7 +106,6 @@ def save_results(batch_results: Dict, transcript_df: pd.DataFrame, feature: str,
                         continue
                     
                     response_text = response.result.message.content[0].text
-                    print(f"Raw response text: {response_text[:200]}...")  # Print first 200 chars
                     
                     # Handle JSON code blocks
                     if "```json" in response_text:
@@ -132,14 +117,11 @@ def save_results(batch_results: Dict, transcript_df: pd.DataFrame, feature: str,
                     
                     # Clean up the response text
                     response_text = response_text.strip().removeprefix("```json").removesuffix("```").strip()
-                    print(f"Cleaned response text: {response_text}")
                     
                     try:
                         parsed_response = json.loads(response_text)
-                        print(f"Successfully parsed JSON with {len(parsed_response)} items")
                     except json.JSONDecodeError as e:
-                        print(f"Error: Could not parse JSON in response {response_idx}: {e}")
-                        print(f"Response text that failed to parse: {response_text}")
+                        print(f"Error: Could not parse JSON in response {response_idx}")
                         continue
 
                     annotations_processed = 0
@@ -149,30 +131,18 @@ def save_results(batch_results: Dict, transcript_df: pd.DataFrame, feature: str,
                             # Use feature name instead of model name for the column
                             transcript_df.loc[matching_row, feature] = value
                             annotations_processed += 1
-                        else:
-                            print(f"Warning: No matching row found for uttid {utt_id}")
                     
-                    print(f"Processed {annotations_processed} annotations from Claude-3-7 response {response_idx}")
                     total_annotations_processed += annotations_processed
                     
-                except AttributeError as e:
-                    print(f"Error: Response structure issue in response {response_idx}: {e}")
-                    print(f"Response type: {type(response)}")
-                    if hasattr(response, '__dict__'):
-                        print(f"Response attributes: {list(response.__dict__.keys())}")
-                except json.JSONDecodeError as e:
-                    print(f"Error: JSON parsing failed in response {response_idx}: {e}")
                 except Exception as e:
-                    print(f"Error processing Claude-3-7 response {response_idx}: {e}")
-                    print(f"Response type: {type(response)}")
+                    print(f"Error processing Claude-3-7 response {response_idx}")
                     continue
             
-            print(f"Total Claude-3-7 annotations processed: {total_annotations_processed}")
+            if total_annotations_processed > 0:
+                print(f"Successfully processed {total_annotations_processed} Claude-3-7 annotations")
 
     # Save the annotated dataframe
     if batch_results:
-        print(f"Saving results to: {batch_dir}")
         transcript_df.to_csv(f"{batch_dir}/atn_df.csv", index=False)
-        print(f"Results saved. Dataframe shape: {transcript_df.shape}")
-        print(f"Columns in dataframe: {list(transcript_df.columns)}")
+        print(f"Results saved to: {batch_dir}/atn_df.csv")
     return "annotated_df", transcript_df
