@@ -193,8 +193,15 @@ def fetch_batch(save_dir: str,
 
     if not batches:
         batches = load_batch_files(timestamp=timestamp, feature=feature, save_dir=save_dir)
+    
+    print(f"Loaded batches: {list(batches.keys())}")
+    for model_name, batch_obj in batches.items():
+        print(f"  {model_name}: batch_id = {batch_obj.id}")
+    
     if_gpt_finished = False if "gpt-4o" in batches.keys() else True
     if_claude_finished = False if "claude-3-7" in batches.keys() else True
+    
+    print(f"Initial state: GPT finished = {if_gpt_finished}, Claude finished = {if_claude_finished}")
 
     # Define the function that processes batches and updates results
     def process_batches(if_gpt_finished: bool, if_claude_finished: bool):
@@ -222,27 +229,57 @@ def fetch_batch(save_dir: str,
 
             elif model == "claude-3-7":
                 client = anthropic.Anthropic()
-                status = client.messages.batches.retrieve(batch_id).processing_status
-                results[model] = []
+                
+                try:
+                    batch_info = client.messages.batches.retrieve(batch_id)
+                    status = batch_info.processing_status
+                    print(f"{model}: Batch {batch_id} status = {status}")
+                    
+                    # Initialize results list if not already done
+                    if model not in results:
+                        results[model] = []
 
-                if status == "ended" and not if_claude_finished:
-                    print(f"{model} has completed batching.")
-                    if_claude_finished = True
-                    # Initialize entry variable
-
-                    for result in client.messages.batches.results(message_batch_id=batch_id):
-                        if result.result.type == "succeeded":
-                            # Access message content properly - assuming text is inside a content list
-                            results[model].append(result)
-                        elif result.result.type == "error":
-                            print(f"Error for {result.custom_id}: {result.result.error}")
-                        else:
-                            print(f"Unexpected result type: {result.result.type}")
-                elif status == "expired":
-                    print(f"{model}: Batch {batch_id} has expired.")
-                    if_claude_finished = True
-                elif not status == "ended":
-                    print(f"{model}: Batch {batch_id} is still in progress.")
+                    if status == "ended" and not if_claude_finished:
+                        print(f"{model} has completed batching.")
+                        print(f"Batch request counts: {batch_info.request_counts}")
+                        
+                        result_count = 0
+                        error_count = 0
+                        other_count = 0
+                        
+                        try:
+                            for result in client.messages.batches.results(message_batch_id=batch_id):
+                                if result.result.type == "succeeded":
+                                    results[model].append(result)
+                                    result_count += 1
+                                elif result.result.type == "error":
+                                    print(f"Error for {result.custom_id}: {result.result.error}")
+                                    error_count += 1
+                                else:
+                                    print(f"Unexpected result type for {result.custom_id}: {result.result.type}")
+                                    other_count += 1
+                        except Exception as e:
+                            print(f"Error iterating through Claude-3-7 results: {e}")
+                        
+                        print(f"Claude-3-7 results summary: {result_count} succeeded, {error_count} errors, {other_count} other")
+                        if_claude_finished = True
+                        
+                    elif status == "expired":
+                        print(f"{model}: Batch {batch_id} has expired.")
+                        if_claude_finished = True
+                    elif status == "canceled":
+                        print(f"{model}: Batch {batch_id} was canceled.")
+                        if_claude_finished = True
+                    elif status == "ended":
+                        # This handles the case where the batch is ended but we haven't processed it yet
+                        print(f"{model}: Batch {batch_id} has ended, but if_claude_finished was already True")
+                        if_claude_finished = True
+                    else:
+                        print(f"{model}: Batch {batch_id} status = {status} (still processing)")
+                        
+                except Exception as e:
+                    print(f"Error retrieving Claude-3-7 batch {batch_id}: {e}")
+                    print(f"Marking Claude-3-7 as finished due to error")
                     if_claude_finished = True
 
         return if_gpt_finished, if_claude_finished
