@@ -25,8 +25,13 @@ def mark_ineligible_rows(model_list: List[str],
     atn_feature_dfs = {feature_name: transcript_df.copy() for feature_name in feature_dict.keys()}
 
     # Filter out ineligible rows
-    eligible_rows = transcript_df[(transcript_df['role'].str.lower() == 'student') &
-                                  (transcript_df['dialogue'].str.split().str.len() >= min_len)]
+    eligible_rows = transcript_df[
+    (transcript_df['role'].str.lower() == 'student') & 
+    (
+        ~transcript_df['dialogue'].str.contains("unintelligible", case=False) | 
+        (transcript_df['dialogue'].str.split().str.len() >= 7)
+    )
+]
     ineligible_rows = transcript_df.index.difference(eligible_rows.index)
 
     # Mark ineligible rows with Nones
@@ -75,6 +80,21 @@ def create_request(model: str, prompt: str, system_prompt: str, idx: int):
                              "max_tokens": 1000,
                              "logprobs": True,
                              "temperature": 0,
+                             "response_format": {
+                                 "type": "json_object"
+                             }}
+                    }
+        case "llama-7b-local" | "llama-13b-local":
+            return {"custom_id": f"request_{idx}",
+                    "method": "POST",
+                    "url": "/v1/chat/completions",
+                    "body": {"model": model,
+                             "messages": [{"role": "system",
+                                           "content": system_prompt},
+                                          {"role": "user",
+                                           "content": prompt}],
+                             "max_tokens": 512,
+                             "temperature": 0.1,
                              "response_format": {
                                  "type": "json_object"
                              }}
@@ -172,6 +192,11 @@ def process_requests(model_requests: Dict,
         elif model == "claude-3-7":
             batch = batch_anthropic_annotate(requests=req_list)
             
+        elif model in ["llama-3b-local", "llama-70b-local"]:
+            from llm_annotator.llm import batch_local_llm_annotate
+            model_name = "meta-llama/Llama-3.2-3B-Instruct" if model == "llama-3b-local" else "meta-llama/Llama-3.3-70B-Instruct"
+            batch = batch_local_llm_annotate(requests=req_list, model_name=model_name)
+            
         batches[model] = batch
 
     store_batch(batches=batches, feature=feature, timestamp=timestamp, save_dir=save_dir)
@@ -196,11 +221,17 @@ def fetch_batch(save_dir: str,
     
     if_gpt_finished = False if "gpt-4o" in batches.keys() else True
     if_claude_finished = False if "claude-3-7" in batches.keys() else True
+    if_local_finished = False if any(model in ["llama-3b-local", "llama-70b-local"] for model in batches.keys()) else True
 
     # Define the function that processes batches and updates results
-    def process_batches(if_gpt_finished: bool, if_claude_finished: bool):
+    def process_batches(if_gpt_finished: bool, if_claude_finished: bool, if_local_finished: bool):
         for model, batch in batches.items():
-            batch_id = batch.id
+            if model in ["llama-3b-local", "llama-70b-local"]:
+                # Local models don't have batch.id
+                pass
+            else:
+                batch_id = batch.id
+            
             if model == "gpt-4o":
                 client = openai.OpenAI()
                 response = client.batches.retrieve(batch_id)
@@ -269,20 +300,28 @@ def fetch_batch(save_dir: str,
                     print(f"Error retrieving Claude-3-7 batch: {e}")
                     if_claude_finished = True
 
-        return if_gpt_finished, if_claude_finished
+            elif model in ["llama-3b-local", "llama-70b-local"]:
+                # Local models process immediately, so results are already available
+                if not if_local_finished:
+                    print(f"{model}: Local batch completed.")
+                    # For local models, batch is already the results list
+                    results[model] = batch
+                    if_local_finished = True
+
+        return if_gpt_finished, if_claude_finished, if_local_finished
 
     if if_wait:
         # Use the loop to keep checking until all batches are done
         while True:
-            if_gpt_finished, if_claude_finished = process_batches(if_gpt_finished, if_claude_finished)
+            if_gpt_finished, if_claude_finished, if_local_finished = process_batches(if_gpt_finished, if_claude_finished, if_local_finished)
 
-            if if_gpt_finished and if_claude_finished:
+            if if_gpt_finished and if_claude_finished and if_local_finished:
                 print("All annotation tasks are finished.")
                 break  # Exit loop if all batches are done
 
             time.sleep(10)
     else:
         # Execute the batch processing just once without waiting
-        process_batches(if_gpt_finished, if_claude_finished)
+        process_batches(if_gpt_finished, if_claude_finished, if_local_finished)
 
     return "batch_results", results

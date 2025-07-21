@@ -1,12 +1,13 @@
 import instructor
 import os
 import json
+import re
 
 import anthropic
 
 from datetime import datetime
 from dotenv import load_dotenv, find_dotenv
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 from pydantic import BaseModel
 from openai import OpenAI
@@ -14,6 +15,14 @@ from anthropic import Anthropic
 from anthropic.types.messages.batch_create_params import Request
 
 from llm_annotator.utils import create_batch_dir
+
+# Local LLM imports
+try:
+    from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
+    import torch
+    TRANSFORMERS_AVAILABLE = True
+except ImportError:
+    TRANSFORMERS_AVAILABLE = False
 
 _ = load_dotenv(find_dotenv())
 
@@ -92,6 +101,193 @@ def batch_anthropic_annotate(requests: List[Request]):
         requests=requests
     )
     return message_batch
+
+
+# Global cache for local models to avoid reloading
+_local_model_cache = {}
+
+
+def _get_local_model(model_name: str):
+    """Get or load a local model with caching."""
+    if not TRANSFORMERS_AVAILABLE:
+        raise ImportError("transformers library is required for local models. Install with: pip install transformers torch accelerate")
+    
+    if model_name not in _local_model_cache:
+        print(f"Loading local model: {model_name}")
+        
+        # Load tokenizer and model
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
+        model = AutoModelForCausalLM.from_pretrained(
+            model_name,
+            torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32,
+            device_map="auto" if torch.cuda.is_available() else None,
+            trust_remote_code=True
+        )
+        
+        # Add pad token if not present
+        if tokenizer.pad_token is None:
+            tokenizer.pad_token = tokenizer.eos_token
+        
+        _local_model_cache[model_name] = {
+            "tokenizer": tokenizer,
+            "model": model
+        }
+        print(f"Model {model_name} loaded successfully")
+    
+    return _local_model_cache[model_name]
+
+
+def _format_llama_prompt(prompt: str, system_prompt: str = None) -> str:
+    """Format prompt for Llama models using the chat template."""
+    if system_prompt:
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": prompt}
+        ]
+    else:
+        messages = [
+            {"role": "user", "content": prompt}
+        ]
+    
+    return messages
+
+
+def _extract_json_from_response(response: str) -> Optional[Dict]:
+    """Extract JSON from model response."""
+    # Try to find JSON in the response
+    json_pattern = r'\{[^{}]*"feature_name"[^{}]*"annotation"[^{}]*\}'
+    match = re.search(json_pattern, response)
+    
+    if match:
+        try:
+            return json.loads(match.group())
+        except json.JSONDecodeError:
+            pass
+    
+    # Fallback: try to extract values manually
+    feature_match = re.search(r'"feature_name":\s*"([^"]*)"', response)
+    annotation_match = re.search(r'"annotation":\s*(\d+)', response)
+    
+    if feature_match and annotation_match:
+        return {
+            "feature_name": feature_match.group(1),
+            "annotation": int(annotation_match.group(1))
+        }
+    
+    return None
+
+
+def local_llm_annotate(prompt: str, model_name: str, system_prompt: str = None) -> Annotation:
+    """Annotate using a local LLM model."""
+    if not TRANSFORMERS_AVAILABLE:
+        raise ImportError("transformers library is required for local models")
+    
+    # Get the cached model
+    model_cache = _get_local_model(model_name)
+    tokenizer = model_cache["tokenizer"]
+    model = model_cache["model"]
+    
+    # Format the prompt
+    messages = _format_llama_prompt(prompt, system_prompt)
+    
+    # Apply chat template
+    formatted_prompt = tokenizer.apply_chat_template(
+        messages,
+        tokenize=False,
+        add_generation_prompt=True
+    )
+    
+    # Tokenize
+    inputs = tokenizer(formatted_prompt, return_tensors="pt", padding=True, truncation=True)
+    
+    # Move to device if using GPU
+    if torch.cuda.is_available():
+        inputs = {k: v.to(model.device) for k, v in inputs.items()}
+    
+    # Generate
+    with torch.no_grad():
+        outputs = model.generate(
+            **inputs,
+            max_new_tokens=256,
+            do_sample=True,
+            temperature=0.1,
+            pad_token_id=tokenizer.eos_token_id,
+            eos_token_id=tokenizer.eos_token_id
+        )
+    
+    # Decode response
+    response = tokenizer.decode(outputs[0][inputs["input_ids"].shape[1]:], skip_special_tokens=True)
+    
+    # Extract JSON from response
+    json_data = _extract_json_from_response(response)
+    
+    if json_data:
+        return Annotation(**json_data)
+    else:
+        # Fallback annotation if parsing fails
+        return Annotation(feature_name="unknown", annotation=0)
+
+
+def batch_local_llm_annotate(requests: List[Dict], model_name: str) -> List[Dict]:
+    """Batch annotate using a local LLM model."""
+    if not TRANSFORMERS_AVAILABLE:
+        raise ImportError("transformers library is required for local models")
+    
+    results = []
+    
+    for i, request in enumerate(requests):
+        try:
+            # Extract prompt and system prompt from request
+            messages = request.get("body", {}).get("messages", [])
+            system_prompt = None
+            user_prompt = None
+            
+            for message in messages:
+                if message.get("role") == "system":
+                    system_prompt = message.get("content", "")
+                elif message.get("role") == "user":
+                    user_prompt = message.get("content", "")
+            
+            if user_prompt:
+                annotation = local_llm_annotate(user_prompt, model_name, system_prompt)
+                result = {
+                    "custom_id": request.get("custom_id", f"request_{i}"),
+                    "response": {
+                        "body": {
+                            "choices": [{
+                                "message": {
+                                    "content": json.dumps({
+                                        "feature_name": annotation.feature_name,
+                                        "annotation": annotation.annotation
+                                    })
+                                }
+                            }]
+                        }
+                    }
+                }
+                results.append(result)
+            
+        except Exception as e:
+            print(f"Error processing request {i}: {str(e)}")
+            # Add error result
+            result = {
+                "custom_id": request.get("custom_id", f"request_{i}"),
+                "response": {
+                    "body": {
+                        "choices": [{
+                            "message": {
+                                "content": json.dumps({
+                                    "feature_name": "error",
+                                    "annotation": 0
+                                })
+                            }
+                        }]
+                    }
+                }
+            }
+            results.append(result)
+    
+    return results
 
 
 def store_meta(model_list: List[str],
@@ -178,6 +374,24 @@ def store_batch(batches: Dict,
                 "expires_at": batch_file.expires_at.isoformat(),
                 "cancel_initiated_at": batch_file.cancel_initiated_at,
                 "results_url": batch_file.results_url,
+                "stored_at": datetime.now().isoformat()
+            }
+        elif model in ["llama-3b-local", "llama-70b-local"]:
+            # For local models, batch_file is a list of results
+            batch_metadata = {
+                "model": model,
+                "type": "local_batch",
+                "processing_status": "completed",
+                "request_counts": {
+                    "processing": 0,
+                    "succeeded": len(batch_file),
+                    "errored": 0,
+                    "canceled": 0,
+                    "expired": 0
+                },
+                "total_requests": len(batch_file),
+                "created_at": datetime.now().isoformat(),
+                "completed_at": datetime.now().isoformat(),
                 "stored_at": datetime.now().isoformat()
             }
         

@@ -11,7 +11,7 @@ try:
     from google.colab import drive
     from google.colab import auth
     from google.auth import default
-
+    
     IN_COLAB = True
     print("Running in Google Colab.")
 
@@ -20,9 +20,22 @@ try:
         creds, _ = default()
         gc = gspread.authorize(creds)
         drive.mount('/content/drive')
+        
+        # Setup PyDrive for file downloads
+        try:
+            from pydrive.auth import GoogleAuth
+            from pydrive.drive import GoogleDrive
+            gauth = GoogleAuth()
+            gauth.credentials = creds
+            gdrive = GoogleDrive(gauth)
+        except ImportError:
+            print("PyDrive not available, Google Drive file downloads will be limited")
+            gdrive = None
 except ImportError:
     IN_COLAB = False
-    print("Running in Local Enviornment.")
+    print("Running in Local Environment.")
+    gc = None
+    gdrive = None
 
 
 class DataLoader:
@@ -31,6 +44,7 @@ class DataLoader:
                  transcript_source: str,
                  save_dir: str = "../results"):
         self.gc = gc if IN_COLAB else None
+        self.gdrive = gdrive if IN_COLAB else None
         self.save_dir = save_dir
         self.transcript_df = self.__load_transcript(transcript_source)
         self.sheets_data = self.__load_features(sheet_source)
@@ -42,15 +56,27 @@ class DataLoader:
                 print("Loading local file")
                 return pd.read_csv(transcript_source)
             else:
-                try:
-                    sheet = self.gc.open_by_key(transcript_source).sheet1
-                    data = sheet.get_all_records()
-                    return pd.DataFrame(data)
-                except:
-                    print("Trying to convert into pd.DataFrame.")
-                    file = self.drive.CreateFile({'id': transcript_source})
-                    file.GetContentFile('temp.csv')
-                    return pd.read_csv('temp.csv')
+                # Try loading as Google Sheet first
+                if self.gc:
+                    try:
+                        sheet = self.gc.open_by_key(transcript_source).sheet1
+                        data = sheet.get_all_records()
+                        return pd.DataFrame(data)
+                    except:
+                        # If Google Sheet fails, try as Google Drive file
+                        if self.gdrive:
+                            print("Trying to download from Google Drive...")
+                            file = self.gdrive.CreateFile({'id': transcript_source})
+                            file.GetContentFile('temp.csv')
+                            return pd.read_csv('temp.csv')
+                        else:
+                            print("Warning: Google Drive access not available in local environment")
+                            print("Please provide a local file path instead of a Google Drive ID")
+                            raise ValueError("Google Drive access not available in local environment")
+                else:
+                    print("Warning: Google Sheets access not available in local environment")
+                    print("Please provide a local file path instead of a Google Sheet ID")
+                    raise ValueError("Google Sheets access not available in local environment")
         except FileNotFoundError:
             raise FileNotFoundError("Transcript file not found")
 

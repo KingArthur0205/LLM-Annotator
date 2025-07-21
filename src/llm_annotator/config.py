@@ -1,4 +1,4 @@
-from llm_annotator.llm import batch_anthropic_annotate
+from llm_annotator.llm import batch_anthropic_annotate, batch_local_llm_annotate
 
 from enum import Enum
 from typing import Optional
@@ -14,6 +14,8 @@ class ModelType(Enum):
     DEEPSEEK = "deepseek-chat"
     LLAMA3B = "meta-llama/Llama-3.2-3B-Instruct"
     LLAMA70B = "meta-llama/Llama-3.3-70B-Instruct"
+    LLAMA7B_LOCAL = "meta-llama/Llama-3.2-3B-Instruct"
+    LLAMA13B_LOCAL = "meta-llama/Llama-3.3-70B-Instruct"
 
 
 @dataclass
@@ -31,9 +33,13 @@ model_configs = {
         "mistral": ModelConfig(ModelType.MISTRAL),
         "deepseek-v3": ModelConfig(ModelType.DEEPSEEK),
         "llama-3.2-3b": ModelConfig(ModelType.LLAMA3B),
-        "llama-3.3-70b": ModelConfig(ModelType.LLAMA70B)
+        "llama-3.3-70b": ModelConfig(ModelType.LLAMA70B),
+        "llama-3b-local": ModelConfig(ModelType.LLAMA7B_LOCAL, max_tokens=512),
+        "llama-70b-local": ModelConfig(ModelType.LLAMA13B_LOCAL, max_tokens=512)
 }
 
 annotation_configs = {
-    "claude-3-5": batch_anthropic_annotate
+    "claude-3-5": batch_anthropic_annotate,
+    "llama-3b-local": lambda requests: batch_local_llm_annotate(requests, "meta-llama/Llama-3.2-3B-Instruct"),
+    "llama-70b-local": lambda requests: batch_local_llm_annotate(requests, "meta-llama/Llama-3.3-70B-Instruct")
 }

@@ -67,17 +67,28 @@ def set_working_dir():
 
 
 def main():
+    # Example with OpenAI model
     annotate(model_list=["gpt-4o"],
                obs_list=["17"],
                feature="Mathcompetent",
                transcript_source="./data/mol.csv",
-               sheet_source="./data/MOL Roles Features.xlsx",
+               sheet_source="./public/Codebook.xlsx",
                prompt_path="data/prompts/base.txt",
                if_wait=True,
                n_uttr=10,
                mode="CoT",
              if_test=True)
 
+    # Example with local Llama model
+    # annotate(model_list=["llama-3b-local"],
+    #            obs_list=["17"],
+    #            feature="Mathcompetent",
+    #            transcript_source="./data/mol.csv",
+    #            sheet_source="./public/Codebook.xlsx",
+    #            prompt_path="data/prompts/base.txt",
+    #            if_wait=True,
+    #            n_uttr=10,
+    #            if_test=True)
 
     #fetch(feature="Mathcompetent")
 
