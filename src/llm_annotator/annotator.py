@@ -28,7 +28,7 @@ def mark_ineligible_rows(model_list: List[str],
     eligible_rows = transcript_df[
     (transcript_df['role'].str.lower() == 'student') & 
     (
-        ~transcript_df['dialogue'].str.contains("unintelligible", case=False) | 
+        ~transcript_df['dialogue'].str.contains("unintelligible", case=False, na=False) | 
         (transcript_df['dialogue'].str.split().str.len() >= 7)
     )
 ]
